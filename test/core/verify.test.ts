@@ -92,6 +92,39 @@ echo different
 
     await expect(engine.verify({ root: "." })).rejects.toBeInstanceOf(InvocationError);
   });
+
+  it("accepts a schema declaration and rejects unknown configuration properties", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          $schema: "./node_modules/@carllee1983/docsentry/schema.json",
+          documents: ["README.md"],
+          unsupported: true,
+        }),
+        "README.md": "# Docsentry\n",
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).rejects.toThrow("unknown property unsupported");
+  });
+
+  it("rejects duplicate document-pair comparison selections", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          documentPairs: [
+            {
+              canonical: "README.md",
+              mirror: "README.zh-TW.md",
+              requireSame: ["commands", "commands"],
+            },
+          ],
+        }),
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).rejects.toThrow("must not contain duplicate values");
+  });
 });
 
 describe("Markdown parser", () => {

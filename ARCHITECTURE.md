@@ -1,6 +1,6 @@
 # Docsentry architecture
 
-**Status:** Draft 0.1
+**Status:** v0.2.0 released; Tagsmith CI dogfooding remains in progress
 
 ## Design decision
 
@@ -40,6 +40,8 @@ AST details or evidence-loading order.
 - Findings are ordered by document path, source location, then rule identifier.
 - Default verification performs no network I/O and executes no commands.
 - Invalid Docsentry configuration is an invocation error, not a Finding.
+- The packaged JSON Schema and runtime validator accept the same configuration
+  properties; unknown properties are invocation errors.
 - A malformed individual document is reported as a Finding whenever a useful
   source location is available.
 
@@ -92,7 +94,7 @@ src/
     markdown.ts         # source-located Markdown facts
   evidence/
     package.ts
-    json-schema.ts
+    structured.ts       # JSON Schema and YAML example evidence
     github-action.ts
   cli/
     index.ts
@@ -117,10 +119,8 @@ src/
 
 ## Deferred design choices
 
-- Markdown parser package selection is deferred until implementation; it must
-  provide source positions for headings, links, inline code, and fenced blocks.
-- JSON Schema implementation is deferred; the selected library must support
-  the schema draft declared by the target document.
-- YAML parsing must be safe and non-executing.
+- Markdown parsing uses remark with source positions for headings, links, and
+  fenced blocks.
+- JSON Schema validation uses Ajv; YAML parsing uses `yaml` with safe,
+  non-executing parsing.
 - SARIF and GitHub annotations are reporters added after JSON output is stable.
-

@@ -44,6 +44,7 @@ describe("docsentry CLI", () => {
     try {
       expect(await main(["init"], { stdout: (message) => output.push(message), stderr: () => undefined })).toBe(0);
       expect(JSON.parse(await readFixture(root, ".docsentry.json"))).toEqual({
+        $schema: "./node_modules/@carllee1983/docsentry/schema.json",
         documents: ["README.md", "docs/**/*.md"],
       });
       expect(output.join("")).toBe("Created .docsentry.json\n");

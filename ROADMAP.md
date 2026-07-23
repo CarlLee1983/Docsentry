@@ -10,7 +10,7 @@
   entrypoint; internal parsing and rule mechanics remain private.
 - Safe adoption: never rewrite a document merely because a check failed.
 
-## Milestone 0 — specification and dogfood fixture
+## Milestone 0 — specification and dogfood fixture — complete
 
 Deliverables:
 
@@ -21,7 +21,7 @@ Deliverables:
 Exit condition: the product boundary and first five rules can be explained
 without referring to an implementation detail.
 
-## Milestone 1 — deterministic Markdown verifier
+## Milestone 1 — deterministic Markdown verifier — complete in v0.1.0
 
 Deliverables:
 
@@ -34,7 +34,7 @@ Deliverables:
 Exit condition: a deliberately broken fixture produces independently testable,
 source-located Findings for each rule.
 
-## Milestone 2 — CI adoption
+## Milestone 2 — CI adoption — in progress
 
 Deliverables:
 
@@ -42,6 +42,15 @@ Deliverables:
 - Stable JSON report shape and documented rule identifiers.
 - Tagsmith dogfooding in CI.
 - Configuration JSON Schema and editor completion.
+
+v0.2.0 delivery:
+
+- The package ships `schema.json`; `docsentry init` points editors to it and
+  the runtime rejects unknown configuration properties.
+- `action.yml` is a composite Action that builds its pinned source revision,
+  then runs `check` in the caller's repository.
+- This repository's CI dogfoods that Action. The pending adoption item is a
+  corresponding workflow in the sibling Tagsmith repository.
 
 Exit condition: a documentation-only PR can be rejected by CI with a concise,
 actionable error report.
@@ -62,10 +71,9 @@ which contract without scanning the full repository report.
 
 | Decision | Current default | Resolve before |
 | --- | --- | --- |
-| Package name | `@carllee1983/docsentry` | First npm publication |
-| Minimum Node version | Match the first supported implementation dependency set | Project scaffold |
-| Config filename | `.docsentry.json` | Config schema implementation |
-| Markdown parser | AST parser with source-location support | Milestone 1 parser work |
-| YAML parser | Safe parser with no object construction | Milestone 1 evidence work |
+| Package name | `@carllee1983/docsentry` | Resolved in v0.1.0 |
+| Minimum Node version | Node.js 20 or later | Resolved in v0.1.0 |
+| Config filename | `.docsentry.json` | Resolved for v0.2 |
+| Markdown parser | remark with source locations | Resolved in v0.1.0 |
+| YAML parser | `yaml` with safe parsing | Resolved in v0.1.0 |
 | Warning policy | Warnings do not fail CI by default | Reporter implementation |
-

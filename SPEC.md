@@ -1,6 +1,7 @@
 # Docsentry product specification
 
-**Status:** Draft 0.1  
+**Status:** v0.2.0 released; Tagsmith CI dogfooding remains in progress
+
 **Last updated:** 2026-07-23
 
 ## Problem
@@ -133,7 +134,7 @@ Maintainers can choose a subset of these comparisons per pair.
 
 ## Configuration
 
-The proposed configuration filename is `.docsentry.json`. Configuration is
+The configuration filename is `.docsentry.json`. Configuration is
 optional for basic document discovery and link parsing, but required for
 schema, Action, package-identity, and document-pair contracts.
 
@@ -175,9 +176,11 @@ schema, Action, package-identity, and document-pair contracts.
 }
 ```
 
-The schema and exact glob semantics must be implemented before the format is
-called stable. Until then this is an intentional design contract, not a
-published compatibility guarantee.
+`schema.json` is distributed at the package root and provides editor completion
+for this format. Runtime configuration validation accepts `$schema` and rejects
+unknown properties at every configuration level. Glob matching uses
+[`minimatch`](https://github.com/isaacs/minimatch) against repository-relative
+paths.
 
 ## Command interface
 
@@ -220,6 +223,16 @@ type Finding = {
 JSON output must contain a `findings` array and a summary of error and warning
 counts. Rule identifiers are a compatibility surface once released.
 
+### Rule identifiers
+
+| Contract | Rule identifiers |
+| --- | --- |
+| Local links | `DOC_LINK_OUTSIDE_REPOSITORY`, `DOC_LINK_MISSING`, `DOC_LINK_ANCHOR_MISSING` |
+| Package contracts | `DOC_PACKAGE_MISSING`, `DOC_SCRIPT_UNKNOWN`, `DOC_PACKAGE_ASSERTION_DOCUMENT_MISSING`, `DOC_PACKAGE_ASSERTION_MISSING`, `DOC_PACKAGE_ASSERTION_MISMATCH` |
+| Structured examples | `DOC_EXAMPLE_PARSE`, `DOC_SCHEMA_UNAVAILABLE`, `DOC_SCHEMA_INVALID` |
+| Action examples | `DOC_ACTION_UNAVAILABLE`, `DOC_ACTION_INPUT_UNKNOWN` |
+| Document pairs | `DOC_PAIR_DOCUMENT_MISSING`, `DOC_PAIR_HEADINGS_MISMATCH`, `DOC_PAIR_COMMAND_MISMATCH`, `DOC_PAIR_CODE_BLOCK_MISMATCH` |
+
 ## Acceptance criteria for the first usable release
 
 1. A fixture repository with a missing local link, removed package script,
@@ -232,4 +245,3 @@ counts. Rule identifiers are a compatibility surface once released.
 4. Findings point to the relevant Markdown source line.
 5. A valid Tagsmith checkout can be configured as a dogfood fixture and checked
    in CI.
-

@@ -4,6 +4,7 @@ import path from "node:path";
 import { NodeRepositoryReader } from "../repository/node-reader.js";
 
 const defaultConfig = {
+  "$schema": "./node_modules/@carllee1983/docsentry/schema.json",
   documents: ["README.md", "docs/**/*.md"],
 };
 

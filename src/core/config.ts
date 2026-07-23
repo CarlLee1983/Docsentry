@@ -61,6 +61,8 @@ export function matchesPatterns(filePath: string, patterns: readonly string[]): 
 
 function validateConfig(input: unknown, source: string): DocsentryConfig {
   const value = object(input, source);
+  allowOnly(value, ["$schema", "documents", "package", "schemaExamples", "actionExamples", "documentPairs"], source);
+  optionalString(value.$schema, "$schema", source);
   const documents = optionalStrings(value.documents, "documents", source);
   const packageConfig = value.package === undefined ? undefined : validatePackage(value.package, source);
   const schemaExamples = optionalArray(value.schemaExamples, "schemaExamples", source)?.map((entry, index) =>
@@ -77,9 +79,11 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
 
 function validatePackage(input: unknown, source: string): DocsentryConfig["package"] {
   const value = object(input, source);
+  allowOnly(value, ["manifest", "assertions"], source);
   const manifest = optionalString(value.manifest, "package.manifest", source);
   const assertions = optionalArray(value.assertions, "package.assertions", source)?.map((entry, index) => {
     const assertion = object(entry, `${source}: package.assertions[${index}]`);
+    allowOnly(assertion, ["document", "label", "value", "evidence"], `${source}: package.assertions[${index}]`);
     return {
       document: requiredString(assertion.document, "document", source),
       label: requiredString(assertion.label, "label", source),
@@ -92,6 +96,7 @@ function validatePackage(input: unknown, source: string): DocsentryConfig["packa
 
 function validateSchemaExample(input: unknown, source: string): SchemaExampleConfig {
   const value = object(input, source);
+  allowOnly(value, ["documents", "language", "schema"], source);
   const language = requiredString(value.language, "language", source);
   if (language !== "json" && language !== "yaml" && language !== "yml") {
     throw new InvocationError(`${source}: language must be json, yaml, or yml`);
@@ -105,6 +110,7 @@ function validateSchemaExample(input: unknown, source: string): SchemaExampleCon
 
 function validateActionExample(input: unknown, source: string): ActionExampleConfig {
   const value = object(input, source);
+  allowOnly(value, ["documents", "action"], source);
   return {
     documents: requiredStrings(value.documents, "documents", source),
     action: requiredString(value.action, "action", source),
@@ -113,9 +119,13 @@ function validateActionExample(input: unknown, source: string): ActionExampleCon
 
 function validateDocumentPair(input: unknown, source: string): DocumentPairConfig {
   const value = object(input, source);
+  allowOnly(value, ["canonical", "mirror", "requireSame"], source);
   const requireSame = requiredStrings(value.requireSame, "requireSame", source);
   if (requireSame.some((part) => part !== "headings" && part !== "commands" && part !== "codeBlocks")) {
     throw new InvocationError(`${source}: requireSame supports headings, commands, and codeBlocks`);
+  }
+  if (new Set(requireSame).size !== requireSame.length) {
+    throw new InvocationError(`${source}: requireSame must not contain duplicate values`);
   }
   return {
     canonical: requiredString(value.canonical, "canonical", source),
@@ -129,6 +139,11 @@ function object(input: unknown, source: string): Record<string, unknown> {
     throw new InvocationError(`${source}: expected an object`);
   }
   return input as Record<string, unknown>;
+}
+
+function allowOnly(value: Record<string, unknown>, allowed: readonly string[], source: string): void {
+  const unexpected = Object.keys(value).find((key) => !allowed.includes(key));
+  if (unexpected) throw new InvocationError(`${source}: unknown property ${unexpected}`);
 }
 
 function optionalArray(input: unknown, field: string, source: string): unknown[] | undefined {
@@ -148,7 +163,11 @@ function optionalStrings(input: unknown, field: string, source: string): string[
 }
 
 function requiredStrings(input: unknown, field: string, source: string): string[] {
-  if (!Array.isArray(input) || input.some((item) => typeof item !== "string")) {
+  if (
+    !Array.isArray(input) ||
+    input.length === 0 ||
+    input.some((item) => typeof item !== "string" || item.length === 0)
+  ) {
     throw new InvocationError(`${source}: ${field} must be an array of strings`);
   }
   return input;

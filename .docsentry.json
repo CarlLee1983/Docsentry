@@ -1,0 +1,30 @@
+{
+  "$schema": "./schema.json",
+  "documents": [
+    "README.md",
+    "SPEC.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "CHANGELOG.md"
+  ],
+  "package": {
+    "manifest": "package.json",
+    "assertions": [
+      {
+        "document": "README.md",
+        "label": "published package name",
+        "value": "@carllee1983/docsentry",
+        "evidence": "/name"
+      }
+    ]
+  },
+  "schemaExamples": [
+    {
+      "documents": [
+        "README.md"
+      ],
+      "language": "json",
+      "schema": "schema.json"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "@carllee1983/docsentry",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Verify repository documentation against local evidence.",
   "type": "module",
   "bin": {
@@ -10,7 +10,8 @@
     ".": "./dist/core/verify.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "schema.json"
   ],
   "publishConfig": {
     "access": "public"

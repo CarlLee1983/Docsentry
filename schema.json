@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://unpkg.com/@carllee1983/docsentry/schema.json",
+  "title": "Docsentry configuration",
+  "description": "Configuration for deterministic documentation verification.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The JSON Schema used by editors for this configuration file."
+    },
+    "documents": {
+      "$ref": "#/$defs/documentPatterns",
+      "description": "Markdown paths or glob patterns selected for the default check."
+    },
+    "package": {
+      "$ref": "#/$defs/package"
+    },
+    "schemaExamples": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/schemaExample"
+      }
+    },
+    "actionExamples": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/actionExample"
+      }
+    },
+    "documentPairs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/documentPair"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "documentPatterns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manifest": {
+          "$ref": "#/$defs/nonEmptyString",
+          "default": "package.json"
+        },
+        "assertions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["document", "label", "value", "evidence"],
+            "properties": {
+              "document": {
+                "$ref": "#/$defs/nonEmptyString"
+              },
+              "label": {
+                "$ref": "#/$defs/nonEmptyString"
+              },
+              "value": {
+                "$ref": "#/$defs/nonEmptyString"
+              },
+              "evidence": {
+                "$ref": "#/$defs/nonEmptyString"
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemaExample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["documents", "language", "schema"],
+      "properties": {
+        "documents": {
+          "$ref": "#/$defs/documentPatterns"
+        },
+        "language": {
+          "enum": ["json", "yaml", "yml"]
+        },
+        "schema": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "actionExample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["documents", "action"],
+      "properties": {
+        "documents": {
+          "$ref": "#/$defs/documentPatterns"
+        },
+        "action": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "documentPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical", "mirror", "requireSame"],
+      "properties": {
+        "canonical": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "mirror": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "requireSame": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["headings", "commands", "codeBlocks"]
+          }
+        }
+      }
+    }
+  }
+}
