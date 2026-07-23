@@ -1,0 +1,71 @@
+# Docsentry roadmap
+
+## Product principles
+
+- Evidence before inference: report only what a local artifact can establish.
+- Deterministic by default: no network and no extracted-command execution.
+- Actionable reports: every result points to a document location and names the
+  evidence that failed to support it.
+- Small Interface, deep implementation: `check` is the maintainer and CI
+  entrypoint; internal parsing and rule mechanics remain private.
+- Safe adoption: never rewrite a document merely because a check failed.
+
+## Milestone 0 — specification and dogfood fixture
+
+Deliverables:
+
+- Product, architecture, and roadmap documents.
+- A proposed `.docsentry.json` for the sibling Tagsmith project.
+- A table of expected results against a clean Tagsmith checkout.
+
+Exit condition: the product boundary and first five rules can be explained
+without referring to an implementation detail.
+
+## Milestone 1 — deterministic Markdown verifier
+
+Deliverables:
+
+- TypeScript CLI scaffold with `init`, `check`, and `inspect`.
+- Markdown discovery, parsing, and source locations.
+- Local link/anchor/asset, package-script, JSON/YAML syntax, schema-example,
+  Action-input, and document-pair rules.
+- JSON output and fixture-driven tests.
+
+Exit condition: a deliberately broken fixture produces independently testable,
+source-located Findings for each rule.
+
+## Milestone 2 — CI adoption
+
+Deliverables:
+
+- Reusable GitHub Action.
+- Stable JSON report shape and documented rule identifiers.
+- Tagsmith dogfooding in CI.
+- Configuration JSON Schema and editor completion.
+
+Exit condition: a documentation-only PR can be rejected by CI with a concise,
+actionable error report.
+
+## Milestone 3 — focused review workflows
+
+Deliverables:
+
+- `check --changed <base>` for PR-scale execution.
+- SARIF reporter or GitHub PR annotations.
+- Explicit CLI help contract, using opt-in trusted command execution only where
+  static evidence is insufficient.
+
+Exit condition: a maintainer can see which changed source or document invalidated
+which contract without scanning the full repository report.
+
+## Open decisions
+
+| Decision | Current default | Resolve before |
+| --- | --- | --- |
+| Package name | `@carllee1983/docsentry` | First npm publication |
+| Minimum Node version | Match the first supported implementation dependency set | Project scaffold |
+| Config filename | `.docsentry.json` | Config schema implementation |
+| Markdown parser | AST parser with source-location support | Milestone 1 parser work |
+| YAML parser | Safe parser with no object construction | Milestone 1 evidence work |
+| Warning policy | Warnings do not fail CI by default | Reporter implementation |
+

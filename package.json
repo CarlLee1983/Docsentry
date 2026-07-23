@@ -1,0 +1,44 @@
+{
+  "name": "@carllee1983/docsentry",
+  "version": "0.1.0",
+  "description": "Verify repository documentation against local evidence.",
+  "type": "module",
+  "bin": {
+    "docsentry": "dist/cli/index.js"
+  },
+  "exports": {
+    ".": "./dist/core/verify.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.check.json --noEmit",
+    "release:verify": "npm run check && npm test && npm run build && npm run tag:check",
+    "tag:check": "tagsmith check --strict",
+    "tag:next": "tagsmith next",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run release:verify"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "minimatch": "^10.0.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5",
+    "yaml": "^2.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@carllee1983/tagsmith": "^0.4.0",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.10"
+  }
+}

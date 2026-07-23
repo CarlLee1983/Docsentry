@@ -1,0 +1,53 @@
+{
+  "$schema": "./node_modules/@carllee1983/docsentry/schema.json",
+  "documents": [
+    "README.md",
+    "docs/**/*.md"
+  ],
+  "package": {
+    "manifest": "package.json",
+    "assertions": [
+      {
+        "document": "README.md",
+        "label": "published package name",
+        "value": "@carllee1983/tagsmith",
+        "evidence": "/name"
+      },
+      {
+        "document": "README.md",
+        "label": "minimum Node version",
+        "value": ">=18",
+        "evidence": "/engines/node"
+      }
+    ]
+  },
+  "schemaExamples": [
+    {
+      "documents": [
+        "README.md",
+        "docs/README.zh-TW.md"
+      ],
+      "language": "json",
+      "schema": "schema.json"
+    }
+  ],
+  "actionExamples": [
+    {
+      "documents": [
+        "README.md"
+      ],
+      "action": "action.yml"
+    }
+  ],
+  "documentPairs": [
+    {
+      "canonical": "README.md",
+      "mirror": "docs/README.zh-TW.md",
+      "requireSame": [
+        "headings",
+        "commands",
+        "codeBlocks"
+      ]
+    }
+  ]
+}
