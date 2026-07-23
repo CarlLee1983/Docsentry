@@ -14,6 +14,7 @@ export type SchemaExampleConfig = {
   documents: readonly string[];
   language: "json" | "yaml" | "yml";
   schema: string;
+  fenceLabel?: string;
 };
 
 export type ActionExampleConfig = {
@@ -96,15 +97,20 @@ function validatePackage(input: unknown, source: string): DocsentryConfig["packa
 
 function validateSchemaExample(input: unknown, source: string): SchemaExampleConfig {
   const value = object(input, source);
-  allowOnly(value, ["documents", "language", "schema"], source);
+  allowOnly(value, ["documents", "language", "schema", "fenceLabel"], source);
   const language = requiredString(value.language, "language", source);
   if (language !== "json" && language !== "yaml" && language !== "yml") {
     throw new InvocationError(`${source}: language must be json, yaml, or yml`);
+  }
+  const fenceLabel = optionalString(value.fenceLabel, "fenceLabel", source);
+  if (fenceLabel && /\s/.test(fenceLabel)) {
+    throw new InvocationError(`${source}: fenceLabel must be one whitespace-free label`);
   }
   return {
     documents: requiredStrings(value.documents, "documents", source),
     language,
     schema: requiredString(value.schema, "schema", source),
+    fenceLabel,
   };
 }
 

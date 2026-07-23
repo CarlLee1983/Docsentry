@@ -1,6 +1,6 @@
 # Docsentry architecture
 
-**Status:** v0.2.0 released; Tagsmith CI dogfooding remains in progress
+**Status:** v0.3.0 release candidate; milestone 3 is in development
 
 ## Design decision
 
@@ -15,6 +15,7 @@ type VerificationRequest = {
   root: string;
   documents?: readonly string[];
   configPath?: string;
+  changedPaths?: readonly string[];
 };
 
 type VerificationReport = {
@@ -39,6 +40,9 @@ AST details or evidence-loading order.
   report.
 - Findings are ordered by document path, source location, then rule identifier.
 - Default verification performs no network I/O and executes no commands.
+- The opt-in CLI `--changed <base>` resolves `changedPaths` through a local Git
+  diff before invoking the engine; the engine selects direct documents and
+  local contract dependencies without exposing Git to rules.
 - Invalid Docsentry configuration is an invocation error, not a Finding.
 - The packaged JSON Schema and runtime validator accept the same configuration
   properties; unknown properties are invocation errors.
@@ -50,7 +54,7 @@ AST details or evidence-loading order.
 ```text
 VerificationEngine.verify
   ├─ load and validate .docsentry.json
-  ├─ discover Documents
+  ├─ discover Documents (or select changed documents and their dependencies)
   ├─ parse Documents into source-located facts
   ├─ collect local Evidence from repository artifacts
   ├─ evaluate the sealed rule registry

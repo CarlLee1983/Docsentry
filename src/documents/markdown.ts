@@ -20,6 +20,7 @@ export type DocumentLink = {
 
 export type CodeBlock = {
   language: string | null;
+  fenceLabels: readonly string[];
   value: string;
   location: SourceLocation;
 };
@@ -37,6 +38,7 @@ type MdastNode = {
   value?: string;
   url?: string;
   lang?: string | null;
+  meta?: string | null;
   depth?: number;
   children?: MdastNode[];
   position?: {
@@ -78,7 +80,12 @@ export function parseMarkdown(filePath: string, contents: string): DocumentFact 
     }
 
     if (node.type === "code") {
-      codeBlocks.push({ language: node.lang?.toLowerCase() ?? null, value: node.value ?? "", location });
+      codeBlocks.push({
+        language: node.lang?.toLowerCase() ?? null,
+        fenceLabels: fenceLabels(node.meta),
+        value: node.value ?? "",
+        location,
+      });
     }
   });
 
@@ -106,4 +113,8 @@ function textContent(node: MdastNode): string {
 function toLocation(filePath: string, node: MdastNode): SourceLocation | undefined {
   if (!node.position) return undefined;
   return { path: filePath, line: node.position.start.line, column: node.position.start.column };
+}
+
+function fenceLabels(metadata: string | null | undefined): readonly string[] {
+  return metadata?.trim().split(/\s+/).filter(Boolean) ?? [];
 }

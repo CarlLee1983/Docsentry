@@ -34,7 +34,9 @@ export async function validateStructuredExamples(
   for (const schemaExample of config.schemaExamples ?? []) {
     const selectedBlocks = structuredBlocks.filter(
       ({ document, block }) =>
-        matchesPatterns(document.path, schemaExample.documents) && sameLanguage(block.language, schemaExample.language),
+        matchesPatterns(document.path, schemaExample.documents) &&
+        sameLanguage(block.language, schemaExample.language) &&
+        (!schemaExample.fenceLabel || block.fenceLabels.includes(schemaExample.fenceLabel)),
     );
     if (selectedBlocks.length === 0) continue;
     const schema = await loadSchema(reader, schemaExample.schema, schemas);

@@ -3,8 +3,8 @@
 > Verify that repository documentation is supported by the code, configuration,
 > schemas, and GitHub Action definitions it describes.
 
-**Status:** v0.2.0 released. The next CI-adoption step is dogfooding against
-Tagsmith; see the [changelog](CHANGELOG.md) for release details.
+**Status:** v0.3.0 release candidate. The next CI-adoption step is dogfooding
+against Tagsmith; see the [changelog](CHANGELOG.md) for release details.
 
 Docsentry is a deterministic CLI and CI tool for maintainers of repositories
 with user-facing documentation. It finds documentation drift such as obsolete
@@ -53,7 +53,10 @@ npm run tag:next  # preview the next release tag with Tagsmith
 
 The current implementation supports `init`, `check`, and `inspect`, along with
 local-link, package-script, structured-example, Action-input, and paired-document
-checks. See `SPEC.md` for the complete v0.1 contract and remaining refinements.
+checks. To limit a review to a pull request's affected documentation, use
+`docsentry check --changed origin/main`; Docsentry compares the Git merge base
+with `HEAD` and checks changed documents plus their local documentation
+dependencies. See `SPEC.md` for the complete contract and remaining refinements.
 
 ## Configuration
 
@@ -72,15 +75,20 @@ Unknown configuration keys are rejected before verification starts. Add the
 contract-specific sections described in [SPEC.md](SPEC.md) as the repository
 needs them.
 
+When one document contains several JSON formats, add a label after the intended
+fence language (for example, <code>```json docsentry-config</code>) and set the
+same `schemaExamples[].fenceLabel`; unlabeled schema rules continue to validate
+every matching JSON or YAML block.
+
 ## GitHub Actions
 
-The v0.2 composite Action runs the Docsentry code bundled with the Action
+The v0.3 composite Action runs the Docsentry code bundled with the Action
 revision, using Node.js 20. A repository workflow can use it as follows:
 
 ```yaml
 steps:
   - uses: actions/checkout@v4
-  - uses: CarlLee1983/Docsentry@v0.2.0
+  - uses: CarlLee1983/Docsentry@v0.3.0
     with:
       config: .docsentry.json
       format: json
@@ -94,5 +102,12 @@ The Action never executes commands extracted from documentation.
 Docsentry uses [`@carllee1983/tagsmith`](https://www.npmjs.com/package/@carllee1983/tagsmith)
 to govern its SemVer `v{version}` tags. Review a release with `npm run
 release:verify`, preview it with `npm run tag:next`, then create it through
-`npx tagsmith create --set-version <version> -m "Release <version>"`. The
-`prepublishOnly` hook repeats the release verification before npm publication.
+`npx tagsmith create --set-version <version> -m "Release <version>"`.
+Tagsmith pushes the validated tag to `origin`; the `Publish GitHub Release`
+workflow then re-verifies that tag, confirms it matches `package.json`, and
+creates the GitHub Release with generated notes. npm publication remains a
+separate, deliberate step, guarded by `prepublishOnly`.
+
+To backfill a GitHub Release for an already-pushed tag, run `Publish GitHub
+Release` from the Actions page and provide that tag (for example, `v0.3.0`).
+The workflow is safe to re-run and never replaces an existing release.

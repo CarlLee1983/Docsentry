@@ -8,7 +8,7 @@
         "allowPrerelease": true
       },
       "initialVersion": "0.1.0",
-      "push": false
+      "push": true
     }
   ],
   "default": "default"

@@ -108,6 +108,25 @@ echo different
     await expect(engine.verify({ root: "." })).rejects.toThrow("unknown property unsupported");
   });
 
+  it("rejects a fence label containing whitespace", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          schemaExamples: [
+            {
+              documents: ["README.md"],
+              language: "json",
+              schema: "schema.json",
+              fenceLabel: "two labels",
+            },
+          ],
+        }),
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).rejects.toThrow("fenceLabel must be one whitespace-free label");
+  });
+
   it("rejects duplicate document-pair comparison selections", async () => {
     const engine = new DocsentryVerificationEngine(
       new MemoryRepositoryReader({
@@ -125,6 +144,134 @@ echo different
 
     await expect(engine.verify({ root: "." })).rejects.toThrow("must not contain duplicate values");
   });
+
+  it("limits a changed Action definition check to its configured documentation examples", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          documents: ["README.md", "docs/action.md"],
+          actionExamples: [{ documents: ["docs/action.md"], action: "action.yml" }],
+        }),
+        "README.md": "[Unrelated missing document](missing.md)\n",
+        "docs/action.md": `\`\`\`yaml
+jobs:
+  verify:
+    steps:
+      - uses: local/action
+        with:
+          removed-input: true
+\`\`\`
+`,
+        "action.yml": "name: Local action\ninputs:\n  current-input:\n    required: false\n",
+      }),
+    );
+
+    const report = await engine.verify({ root: ".", changedPaths: ["action.yml"] });
+
+    expect(report.findings).toMatchObject([
+      { rule: "DOC_ACTION_INPUT_UNKNOWN", document: { path: "docs/action.md", line: 1 } },
+    ]);
+  });
+
+  it("includes documents that link to a changed or deleted local target", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({ documents: ["README.md", "docs/unrelated.md"] }),
+        "README.md": "[Removed asset](assets/logo.svg)\n",
+        "docs/unrelated.md": "[Unrelated missing document](missing.md)\n",
+      }),
+    );
+
+    const report = await engine.verify({ root: ".", changedPaths: ["assets/logo.svg"] });
+
+    expect(report.findings).toMatchObject([
+      { rule: "DOC_LINK_MISSING", document: { path: "README.md", line: 1 } },
+    ]);
+  });
+
+  it("validates only fenced examples marked with a configured schema label", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          schemaExamples: [
+            {
+              documents: ["README.md"],
+              language: "json",
+              schema: "schema.json",
+              fenceLabel: "docsentry-config",
+            },
+          ],
+        }),
+        "README.md": `\`\`\`json docsentry-config
+{"tags":[]}
+\`\`\`
+
+\`\`\`json
+{"schemaVersion":1,"ok":true}
+\`\`\`
+`,
+        "schema.json": JSON.stringify({
+          type: "object",
+          required: ["tags"],
+          properties: { tags: { type: "array" } },
+        }),
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).resolves.toMatchObject({ findings: [] });
+  });
+
+  it("keeps document-and-language schema selection when no fence label is configured", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          schemaExamples: [{ documents: ["README.md"], language: "json", schema: "schema.json" }],
+        }),
+        "README.md": `\`\`\`json docsentry-config
+{"tags":[]}
+\`\`\`
+
+\`\`\`json
+{"schemaVersion":1,"ok":true}
+\`\`\`
+`,
+        "schema.json": JSON.stringify({
+          type: "object",
+          required: ["tags"],
+          properties: { tags: { type: "array" } },
+        }),
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).resolves.toMatchObject({
+      findings: [{ rule: "DOC_SCHEMA_INVALID", document: { path: "README.md", line: 5 } }],
+    });
+  });
+
+  it("compares both documents in a pair when either one changes", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          documents: ["README.md", "docs/README.zh-TW.md"],
+          documentPairs: [
+            {
+              canonical: "README.md",
+              mirror: "docs/README.zh-TW.md",
+              requireSame: ["commands"],
+            },
+          ],
+        }),
+        "README.md": "\`\`\`sh\nnpm run check\n\`\`\`\n",
+        "docs/README.zh-TW.md": "\`\`\`sh\nnpm run test\n\`\`\`\n",
+      }),
+    );
+
+    const report = await engine.verify({ root: ".", changedPaths: ["README.md"] });
+
+    expect(report.findings).toMatchObject([
+      { rule: "DOC_PAIR_COMMAND_MISMATCH", document: { path: "docs/README.zh-TW.md", line: 2 } },
+    ]);
+  });
 });
 
 describe("Markdown parser", () => {
@@ -134,6 +281,14 @@ describe("Markdown parser", () => {
     expect(document.headings).toMatchObject([
       { anchor: "repeat", path: ["Repeat"], location: { line: 1, column: 1 } },
       { anchor: "repeat-1", path: ["Repeat", "Repeat"], location: { line: 3, column: 1 } },
+    ]);
+  });
+
+  it("extracts whitespace-separated labels from fenced code metadata", () => {
+    const document = parseMarkdown("README.md", "\`\`\`json docsentry-config example\n{}\n\`\`\`\n");
+
+    expect(document.codeBlocks).toMatchObject([
+      { language: "json", fenceLabels: ["docsentry-config", "example"], location: { line: 1, column: 1 } },
     ]);
   });
 });

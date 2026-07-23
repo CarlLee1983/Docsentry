@@ -1,6 +1,6 @@
 {
   "name": "@carllee1983/docsentry",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Verify repository documentation against local evidence.",
   "type": "module",
   "bin": {

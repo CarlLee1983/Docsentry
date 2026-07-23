@@ -55,11 +55,11 @@ v0.2.0 delivery:
 Exit condition: a documentation-only PR can be rejected by CI with a concise,
 actionable error report.
 
-## Milestone 3 — focused review workflows
+## Milestone 3 — focused review workflows — in progress
 
 Deliverables:
 
-- `check --changed <base>` for PR-scale execution.
+- `check --changed <base>` for PR-scale execution — complete locally.
 - SARIF reporter or GitHub PR annotations.
 - Explicit CLI help contract, using opt-in trusted command execution only where
   static evidence is insufficient.

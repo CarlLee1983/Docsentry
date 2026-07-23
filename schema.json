@@ -94,6 +94,12 @@
         },
         "schema": {
           "$ref": "#/$defs/nonEmptyString"
+        },
+        "fenceLabel": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^\\S+$",
+          "description": "Optional whitespace-separated Markdown fence metadata label required on examples selected by this schema."
         }
       }
     },

@@ -28,7 +28,8 @@
         "docs/README.zh-TW.md"
       ],
       "language": "json",
-      "schema": "schema.json"
+      "schema": "schema.json",
+      "fenceLabel": "docsentry-config"
     }
   ],
   "actionExamples": [

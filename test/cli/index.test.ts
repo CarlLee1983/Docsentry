@@ -1,12 +1,15 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { execFile as execFileCallback } from "node:child_process";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import { afterEach, describe, expect, it } from "vitest";
 
 import { main } from "../../src/cli/index.js";
 
 const workingDirectories: string[] = [];
+const execFile = promisify(execFileCallback);
 
 afterEach(async () => {
   await Promise.all(workingDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
@@ -56,6 +59,54 @@ describe("docsentry CLI", () => {
       process.chdir(originalDirectory);
     }
   });
+
+  it("checks only the documents affected since the requested Git base", async () => {
+    const root = await fixture({
+      "README.md": "[Working link](docs/guide.md)\n",
+      "docs/guide.md": "# Guide\n",
+      "docs/unrelated.md": "[Unrelated missing document](missing.md)\n",
+    });
+    await git(root, "init");
+    await git(root, "config", "user.email", "docsentry@example.test");
+    await git(root, "config", "user.name", "Docsentry tests");
+    await git(root, "add", ".");
+    await git(root, "commit", "-m", "Initial documentation");
+    const { stdout: base } = await git(root, "rev-parse", "HEAD");
+    await writeFile(path.join(root, "README.md"), "[Missing document](missing.md)\n", "utf8");
+    await git(root, "add", "README.md");
+    await git(root, "commit", "-m", "Break the README link");
+
+    const output: string[] = [];
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(
+        await main(["check", "--changed", base.trim(), "--format", "json"], {
+          stdout: (message) => output.push(message),
+          stderr: () => undefined,
+        }),
+      ).toBe(1);
+
+      expect(JSON.parse(output.join(""))).toMatchObject({
+        findings: [{ rule: "DOC_LINK_MISSING", document: { path: "README.md", line: 1 } }],
+        summary: { errors: 1, warnings: 0 },
+      });
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("rejects combining --changed with an explicit document path", async () => {
+    const errors: string[] = [];
+
+    expect(
+      await main(["check", "--changed", "origin/main", "README.md"], {
+        stdout: () => undefined,
+        stderr: (message) => errors.push(message),
+      }),
+    ).toBe(2);
+    expect(errors.join("")).toContain("--changed cannot be combined with explicit document paths");
+  });
 });
 
 async function fixture(files: Readonly<Record<string, string>>): Promise<string> {
@@ -63,6 +114,7 @@ async function fixture(files: Readonly<Record<string, string>>): Promise<string>
   workingDirectories.push(root);
   await Promise.all(
     Object.entries(files).map(async ([filePath, contents]) => {
+      await mkdir(path.dirname(path.join(root, filePath)), { recursive: true });
       await writeFile(path.join(root, filePath), contents, "utf8");
     }),
   );
@@ -72,4 +124,8 @@ async function fixture(files: Readonly<Record<string, string>>): Promise<string>
 async function readFixture(root: string, filePath: string): Promise<string> {
   const { readFile } = await import("node:fs/promises");
   return readFile(path.join(root, filePath), "utf8");
+}
+
+async function git(root: string, ...arguments_: string[]): Promise<{ stdout: string; stderr: string }> {
+  return execFile("git", ["-C", root, ...arguments_], { encoding: "utf8" });
 }

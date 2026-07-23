@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 
 import { InvocationError } from "../core/errors.js";
 import { verifyRepository } from "../core/verify.js";
+import { changedFiles } from "./changed-files.js";
 import { inspectDocument } from "./inspect.js";
 import { initialize } from "./init.js";
 import { renderJson } from "../reporters/json.js";
@@ -34,6 +35,7 @@ export async function main(
         root: process.cwd(),
         documents: options.documents.length > 0 ? options.documents : undefined,
         configPath: options.configPath,
+        changedPaths: options.changedBase ? await changedFiles(process.cwd(), options.changedBase) : undefined,
       });
       io.stdout(options.format === "json" ? renderJson(report) : renderTerminal(report));
       return report.summary.errors > 0 ? 1 : 0;
@@ -47,6 +49,7 @@ export async function main(
 
 type CheckOptions = {
   configPath?: string;
+  changedBase?: string;
   format: "terminal" | "json";
   documents: string[];
 };
@@ -60,6 +63,12 @@ function checkOptions(arguments_: readonly string[]): CheckOptions {
       if (!configPath) throw new InvocationError("--config requires a path");
       result.configPath = configPath;
       index += 1;
+    } else if (argument === "--changed") {
+      const changedBase = arguments_[index + 1];
+      if (!changedBase || changedBase.startsWith("-")) throw new InvocationError("--changed requires a Git revision");
+      if (result.changedBase) throw new InvocationError("--changed may only be specified once");
+      result.changedBase = changedBase;
+      index += 1;
     } else if (argument === "--format") {
       const format = arguments_[index + 1];
       if (format !== "json" && format !== "terminal") {
@@ -72,6 +81,9 @@ function checkOptions(arguments_: readonly string[]): CheckOptions {
     } else {
       result.documents.push(argument);
     }
+  }
+  if (result.changedBase && result.documents.length > 0) {
+    throw new InvocationError("--changed cannot be combined with explicit document paths");
   }
   return result;
 }

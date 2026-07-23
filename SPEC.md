@@ -1,6 +1,6 @@
 # Docsentry product specification
 
-**Status:** v0.2.0 released; Tagsmith CI dogfooding remains in progress
+**Status:** v0.3.0 release candidate; milestone 3 is in development
 
 **Last updated:** 2026-07-23
 
@@ -157,7 +157,8 @@ schema, Action, package-identity, and document-pair contracts.
     {
       "documents": ["README.md", "docs/**/*.md"],
       "language": "json",
-      "schema": "schema.json"
+      "schema": "schema.json",
+      "fenceLabel": "docsentry-config"
     }
   ],
   "actionExamples": [
@@ -180,7 +181,10 @@ schema, Action, package-identity, and document-pair contracts.
 for this format. Runtime configuration validation accepts `$schema` and rejects
 unknown properties at every configuration level. Glob matching uses
 [`minimatch`](https://github.com/isaacs/minimatch) against repository-relative
-paths.
+paths. A schema example can set `fenceLabel` to validate only fenced blocks
+whose metadata contains that whitespace-separated label, such as
+<code>```json docsentry-config</code>. Omit it to preserve the default of
+validating every matching document and language pair.
 
 ## Command interface
 
@@ -190,6 +194,7 @@ The initial CLI surface stays small:
 docsentry init
 docsentry check [paths...]
 docsentry check --config .docsentry.json --format json
+docsentry check --changed origin/main
 docsentry inspect README.md
 ```
 
@@ -201,9 +206,16 @@ commands, code blocks, and headings for one Document without passing judgment.
 Planned but not part of v0.1:
 
 ```bash
-docsentry check --changed origin/main
 docsentry check --format sarif
 ```
+
+`--changed <base>` is an opt-in focused-review mode. It obtains local paths
+from `git diff <base>...HEAD`, including deletions, and cannot be combined with
+explicit document paths. It checks changed Markdown documents and also selects
+documents affected by a changed configuration, package manifest, schema, Action
+definition, paired document, or local-link target. This is the only current
+mode that invokes a trusted Git command; it never executes commands extracted
+from documentation.
 
 ## Report contract
 
