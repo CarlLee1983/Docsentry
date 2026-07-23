@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Docsentry：以本地證據驗證 Markdown 文件，讓過期指令、失效連結與錯誤工作流程範例在合併前現形。"
+    />
+    <title>Docsentry — 讓文件和程式碼維持同步</title>
+    <style>
+      :root {
+        --ink: #172033;
+        --muted: #52617a;
+        --paper: #f7f8fc;
+        --surface: #ffffff;
+        --brand: #5147d9;
+        --brand-dark: #332c9a;
+        --mint: #baf2d0;
+        --line: #dce1ec;
+        --code: #151b2b;
+        color: var(--ink);
+        background: var(--paper);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; line-height: 1.6; }
+      a { color: inherit; }
+
+      .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+      .topbar { padding: 22px 0; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+      .brand { font-size: 1.08rem; font-weight: 800; text-decoration: none; letter-spacing: -0.02em; }
+      .brand span { color: var(--brand); }
+      .nav { display: flex; gap: 20px; font-size: 0.92rem; color: var(--muted); }
+      .nav a { text-decoration: none; }
+      .nav a:hover { color: var(--brand); }
+
+      .hero { padding: 82px 0 72px; display: grid; grid-template-columns: 1.1fr 0.9fr; align-items: center; gap: 64px; }
+      .eyebrow { color: var(--brand); font-weight: 750; font-size: 0.88rem; letter-spacing: 0.08em; text-transform: uppercase; }
+      h1 { max-width: 720px; margin: 14px 0 20px; font-size: clamp(2.6rem, 6vw, 5.1rem); line-height: 1.04; letter-spacing: -0.065em; }
+      h1 em { color: var(--brand); font-style: normal; }
+      .lede { max-width: 600px; font-size: 1.17rem; color: var(--muted); }
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+      .button { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; border-radius: 8px; padding: 0 18px; background: var(--brand); color: white; font-weight: 700; text-decoration: none; }
+      .button:hover { background: var(--brand-dark); }
+      .button.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+      .button.secondary:hover { border-color: var(--brand); color: var(--brand); }
+      .assurance { display: flex; flex-wrap: wrap; gap: 16px; margin: 28px 0 0; padding: 0; list-style: none; color: var(--muted); font-size: 0.9rem; }
+      .assurance li::before { content: "✓"; margin-right: 7px; color: #07864d; font-weight: 800; }
+
+      .terminal { overflow: hidden; border: 1px solid #2d3751; border-radius: 14px; background: var(--code); color: #eaf0ff; box-shadow: 0 24px 60px rgba(25, 31, 54, 0.22); }
+      .terminal-bar { display: flex; gap: 7px; padding: 13px 16px; background: #242d43; }
+      .dot { width: 10px; height: 10px; border-radius: 50%; background: #fc776b; font-size: 0; }
+      .dot:nth-child(2) { background: #f7c65d; }
+      .dot:nth-child(3) { background: #68cf8b; }
+      pre { margin: 0; overflow-x: auto; padding: 25px; font: 0.86rem/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .prompt { color: var(--mint); }
+      .ok { color: #8ee5b4; }
+      .comment { color: #9caac7; }
+
+      section { padding: 86px 0; }
+      .quiet { background: #eef0f7; }
+      h2 { margin: 0; font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.1; letter-spacing: -0.045em; }
+      .section-lede { max-width: 680px; margin: 16px 0 0; color: var(--muted); font-size: 1.08rem; }
+      .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 38px; }
+      .card { min-height: 220px; padding: 26px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+      .number { display: inline-grid; width: 31px; height: 31px; place-items: center; border-radius: 50%; background: #e8e6ff; color: var(--brand); font-size: 0.82rem; font-weight: 800; }
+      h3 { margin: 18px 0 8px; font-size: 1.12rem; }
+      .card p { margin: 0; color: var(--muted); }
+
+      .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 38px; }
+      .step { padding: 26px; border-top: 4px solid var(--brand); background: var(--surface); }
+      .step strong { display: block; margin-bottom: 8px; font-size: 1.1rem; }
+      .step p { margin: 0; color: var(--muted); }
+      .rule-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+      .rule { padding: 8px 11px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); font: 0.78rem ui-monospace, monospace; }
+
+      .ci { display: grid; grid-template-columns: 0.8fr 1.2fr; align-items: center; gap: 52px; }
+      .ci-copy p { color: var(--muted); font-size: 1.06rem; }
+      .code { overflow: hidden; border-radius: 12px; background: var(--code); color: #eaf0ff; }
+      .code pre { padding: 26px; }
+      .yaml-key { color: #9db8ff; }
+      .yaml-value { color: #8ee5b4; }
+
+      .cta { padding: 78px 0; text-align: center; background: var(--brand); color: white; }
+      .cta h2 { max-width: 700px; margin: 0 auto; }
+      .cta p { max-width: 620px; margin: 16px auto 28px; color: #e6e4ff; }
+      .cta .button { background: white; color: var(--brand-dark); }
+      .cta .button:hover { background: #edf0ff; }
+      footer { padding: 28px 0; color: var(--muted); font-size: 0.9rem; }
+
+      @media (max-width: 760px) {
+        .shell { width: min(100% - 32px, 1120px); }
+        .topbar { padding: 17px 0; }
+        .nav { display: none; }
+        .hero, .ci { grid-template-columns: 1fr; gap: 38px; }
+        .hero { padding: 50px 0 58px; }
+        section { padding: 62px 0; }
+        .cards, .flow { grid-template-columns: 1fr; }
+      }
+
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    </style>
+  </head>
+  <body>
+    <header class="shell topbar">
+      <a class="brand" href="../README.md">doc<span>sentry</span></a>
+      <nav class="nav" aria-label="頁面導覽">
+        <a href="#why">為什麼需要它</a>
+        <a href="#how">如何運作</a>
+        <a href="#ci">導入 CI</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="shell hero">
+        <div>
+          <div class="eyebrow">Deterministic documentation verification</div>
+          <h1>別讓文件在程式碼改版後，<em>悄悄過期。</em></h1>
+          <p class="lede">Docsentry 從 repository 的本地證據驗證 Markdown。失效連結、過期指令、錯誤設定範例與 Action input，會在合併前被具體指出。</p>
+          <div class="actions">
+            <a class="button" href="operations-guide.zh-TW.md">閱讀操作指南</a>
+            <a class="button secondary" href="../README.md">查看專案 README</a>
+          </div>
+          <ul class="assurance" aria-label="產品特性">
+            <li>不存取網路</li>
+            <li>不執行文件命令</li>
+            <li>不自動改寫文件</li>
+          </ul>
+        </div>
+        <div class="terminal" aria-label="Docsentry 成功完成檢查的終端機輸出範例">
+          <div class="terminal-bar"><span class="dot" aria-hidden="true">•</span><span class="dot" aria-hidden="true">•</span><span class="dot" aria-hidden="true">•</span></div>
+          <pre><span class="prompt">$</span> npx docsentry check
+<span class="comment">Checking documentation contracts…</span>
+
+<span class="ok">✓</span> README.md
+<span class="ok">✓</span> docs/guide.md
+
+<span class="ok">0 errors, 0 warnings</span></pre>
+        </div>
+      </div>
+
+      <section class="quiet" id="why">
+        <div class="shell">
+          <h2>文件不是附屬品，也是產品契約。</h2>
+          <p class="section-lede">每當 script、設定 schema 或 GitHub Action 改變，文件的承諾可能已不成立。Docsentry 將這些承諾轉成可在 CI 執行、可定位到行列的檢查。</p>
+          <div class="cards">
+            <article class="card"><span class="number">01</span><h3>抓到失效內容</h3><p>驗證本地 Markdown 連結、anchors 與資產路徑，包含解析到 repository 外的 symlink。</p></article>
+            <article class="card"><span class="number">02</span><h3>對照真實證據</h3><p>文件中的 package、JSON／YAML、Action input 與鏡像文件，都與工作目錄內的實際檔案比對。</p></article>
+            <article class="card"><span class="number">03</span><h3>留下可行動結果</h3><p>每個 finding 都包含規則 ID、文件位置與失敗證據；一次呈現所有可發現問題，不會 fail fast。</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="how">
+        <div class="shell">
+          <h2>用三個步驟，把文件治理放進日常開發。</h2>
+          <div class="flow">
+            <div class="step"><strong>1. 描述需要守住的契約</strong><p>以 `.docsentry.json` 選擇文件，按需加入 schema、package、Action 與雙語配對規則。</p></div>
+            <div class="step"><strong>2. 在本機得到完整回饋</strong><p>執行 `docsentry check`；PR 規模的變更可使用 `--changed origin/main` 聚焦受影響範圍。</p></div>
+            <div class="step"><strong>3. 交給 CI 守門</strong><p>把相同指令放進 GitHub Actions，讓過期文件無法隨程式碼一同合併。</p></div>
+          </div>
+          <div class="rule-list" aria-label="支援的文件契約規則">
+            <span class="rule">DOC_LINK_MISSING</span><span class="rule">DOC_LINK_ANCHOR_MISSING</span><span class="rule">DOC_SCRIPT_UNKNOWN</span><span class="rule">DOC_SCHEMA_INVALID</span><span class="rule">DOC_ACTION_INPUT_UNKNOWN</span><span class="rule">DOC_PAIR_*_MISMATCH</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="quiet" id="ci">
+        <div class="shell ci">
+          <div class="ci-copy">
+            <div class="eyebrow">GitHub Actions</div>
+            <h2>每個 PR 都有文件的安全網。</h2>
+            <p>Docsentry 是一個小介面、深實作的檢查器。`check` 專注做一件事：用 repository 內可證實的資料驗證文件，不猜測、不連網，也不改檔。</p>
+            <a class="button secondary" href="operations-guide.zh-TW.md">查看 CI 導入細節</a>
+          </div>
+          <div class="code" aria-label="GitHub Actions 設定範例">
+            <pre><span class="yaml-key">steps</span>:
+  - <span class="yaml-key">uses</span>: <span class="yaml-value">actions/checkout@v4</span>
+  - <span class="yaml-key">uses</span>: <span class="yaml-value">CarlLee1983/Docsentry@v0.5.0</span>
+    <span class="yaml-key">with</span>:
+      <span class="yaml-key">config</span>: <span class="yaml-value">.docsentry.json</span>
+      <span class="yaml-key">format</span>: <span class="yaml-value">sarif</span></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta">
+        <div class="shell">
+          <h2>讓文件的每一句話，都有本地證據支持。</h2>
+          <p>從一個 README 開始，建立能隨程式碼長期維護的文件契約。</p>
+          <a class="button" href="operations-guide.zh-TW.md">開始設定 Docsentry</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="shell">Docsentry v0.5.0 · Deterministic, local-first documentation verification.</footer>
+  </body>
+</html>
