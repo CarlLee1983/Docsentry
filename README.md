@@ -3,7 +3,7 @@
 > Verify that repository documentation is supported by the code, configuration,
 > schemas, and GitHub Action definitions it describes.
 
-**Status:** v0.5.0 release candidate. Docsentry is dogfooded in its own CI and
+**Status:** v0.5.0 released. Docsentry is dogfooded in its own CI and
 in the sibling Tagsmith repository; see the [changelog](CHANGELOG.md) for
 release details.
 
@@ -30,6 +30,9 @@ The first repository used to validate the product will be the sibling
 - [Roadmap](ROADMAP.md) — staged delivery plan and open decisions.
 - [Configuration schema](schema.json) — editor completion and validation for
   `.docsentry.json`.
+- [繁體中文操作指南](docs/operations-guide.zh-TW.md) — 從安裝、設定到 CI
+  導入的實作步驟。
+- [產品介紹頁](docs/promo.html) — 可離線開啟的單頁推廣素材。
 - [Changelog](CHANGELOG.md) — release and unreleased change history.
 - [Example configuration](examples/tagsmith.docsentry.json) — proposed
   Docsentry configuration for dogfooding against Tagsmith.
