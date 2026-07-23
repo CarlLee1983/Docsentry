@@ -32,7 +32,8 @@
       "documents": [
         "README.md"
       ],
-      "action": "action.yml"
+      "action": "action.yml",
+      "uses": "CarlLee1983/Docsentry"
     }
   ]
 }

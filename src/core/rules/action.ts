@@ -2,7 +2,7 @@ import type { DocsentryConfig } from "../config.js";
 import { matchesPatterns } from "../config.js";
 import type { Finding } from "../finding.js";
 import type { DocumentFact } from "../../documents/markdown.js";
-import { readActionInputs, workflowWithKeys } from "../../evidence/github-action.js";
+import { readActionInputs, workflowActionExamples } from "../../evidence/github-action.js";
 import { parseStructuredBlock } from "../../evidence/structured.js";
 import type { RepositoryReader } from "../../repository/reader.js";
 
@@ -14,34 +14,38 @@ export async function validateActionExamples(
   const findings: Finding[] = [];
   const actions = new Map<string, ActionResult>();
   for (const actionExample of config.actionExamples ?? []) {
-    const selectedBlocks = documents.flatMap((document) =>
+    const selectedExamples = documents.flatMap((document) =>
       matchesPatterns(document.path, actionExample.documents)
-        ? document.codeBlocks.filter(isYaml).map((block) => ({ document, block }))
+        ? document.codeBlocks
+          .filter(isYaml)
+          .flatMap((block) => {
+            const parsed = parseStructuredBlock(block);
+            if (!parsed.ok) return [];
+            return workflowActionExamples(block.value, actionExample.uses).map((example) => ({ document, block, example }));
+          })
         : [],
     );
-    if (selectedBlocks.length === 0) continue;
+    if (selectedExamples.length === 0) continue;
     const action = await loadAction(reader, actionExample.action, actions);
-    for (const { block } of selectedBlocks) {
-      const parsed = parseStructuredBlock(block);
-      if (!parsed.ok) continue;
+    for (const { document, block, example } of selectedExamples) {
       if (!action.ok) {
         findings.push({
           rule: "DOC_ACTION_UNAVAILABLE",
           severity: "error",
           message: action.message,
-          document: block.location,
+          document: actionLocation(document.path, block.location.line, example.location),
           evidence: { path: actionExample.action },
         });
         continue;
       }
-      for (const key of workflowWithKeys(parsed.value)) {
-        if (!action.inputs.has(key)) {
+      for (const input of example.inputs) {
+        if (!action.inputs.has(input.key)) {
           findings.push({
             rule: "DOC_ACTION_INPUT_UNKNOWN",
             severity: "error",
-            message: `Documented Action input "${key}" does not exist in ${actionExample.action}.`,
-            document: block.location,
-            evidence: { path: actionExample.action, pointer: `/inputs/${key}` },
+            message: `Documented Action input "${input.key}" does not exist in ${actionExample.action}.`,
+            document: actionLocation(document.path, block.location.line, input.location),
+            evidence: { path: actionExample.action, pointer: `/inputs/${input.key}` },
             suggestion: "Use an input declared by the Action metadata.",
           });
         }
@@ -72,6 +76,14 @@ async function loadAction(
 
 function isYaml(block: DocumentFact["codeBlocks"][number]): boolean {
   return block.language === "yaml" || block.language === "yml";
+}
+
+function actionLocation(
+  path: string,
+  fenceLine: number,
+  location: { line: number; column: number },
+): Finding["document"] {
+  return { path, line: fenceLine + location.line, column: location.column };
 }
 
 function messageOf(error: unknown): string {

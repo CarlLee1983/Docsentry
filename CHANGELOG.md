@@ -3,7 +3,12 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
-## Unreleased
+## v0.5.0 — 2026-07-23
+
+### Added
+
+- Action example rules can now select one documented `uses:` reference, ignoring
+  its `@ref` suffix, and pinpoint an unknown input at its YAML key.
 
 ### Changed
 
@@ -11,6 +16,11 @@ All notable Docsentry changes are recorded here. Release tags follow the
   workflow and its configuration schema reference to Docsentry v0.4.0.
 - Docsentry now dogfoods validation of the GitHub Action example in its own
   README.
+
+### Fixed
+
+- Repository reads now reject symbolic links that resolve outside the checkout;
+  affected documentation links report `DOC_LINK_OUTSIDE_REPOSITORY`.
 
 ## v0.4.0 — 2026-07-23
 

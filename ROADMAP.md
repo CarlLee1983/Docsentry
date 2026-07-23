@@ -68,6 +68,19 @@ Deliverables:
 Exit condition: a maintainer can see which changed source or document invalidated
 which contract without scanning the full repository report.
 
+## Milestone 4 — precise Action examples — complete in v0.5.0
+
+Deliverables:
+
+- Optional `actionExamples[].uses` configuration to identify the Action whose
+  `with:` keys are being documented, independent of its version suffix.
+- Unknown Action input findings point to the YAML key's source line and column.
+- Backward-compatible validation of every `with:` mapping when `uses` is
+  omitted.
+
+Exit condition: a workflow example containing several Actions reports only an
+unknown input belonging to the configured Action, at that input's source line.
+
 ## Open decisions
 
 | Decision | Current default | Resolve before |

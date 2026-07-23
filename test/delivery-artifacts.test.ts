@@ -61,6 +61,17 @@ describe("delivery artifacts", () => {
     expect(action.runs.steps.some((step) => step.run?.includes('if [[ -n "$DOCSENTRY_CONFIG" ]]'))).toBe(true);
   });
 
+  it("allows Action examples to select their documented uses reference", async () => {
+    const schema = JSON.parse(await readFile(new URL("../schema.json", import.meta.url), "utf8"));
+    const validate = new Ajv({ strict: false }).compile(schema);
+
+    expect(
+      validate({
+        actionExamples: [{ documents: ["README.md"], action: "action.yml", uses: "CarlLee1983/Docsentry" }],
+      }),
+    ).toBe(true);
+  });
+
   it("publishes verified version tags as idempotent GitHub Releases", async () => {
     const release = YAML.parse(
       await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8"),

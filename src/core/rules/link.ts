@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import { RepositoryPathError } from "../errors.js";
 import type { Finding } from "../finding.js";
 import type { DocumentFact } from "../../documents/markdown.js";
 import { resolveRepositoryPath } from "../../repository/path.js";
@@ -32,7 +33,18 @@ export async function validateLinks(
         continue;
       }
 
-      if (!(await reader.exists(targetPath))) {
+      let targetExists: boolean;
+      try {
+        targetExists = await reader.exists(targetPath);
+      } catch (error: unknown) {
+        if (error instanceof RepositoryPathError) {
+          findings.push(outsideRepositoryFinding(link.location, link.url));
+          continue;
+        }
+        throw error;
+      }
+
+      if (!targetExists) {
         findings.push({
           rule: "DOC_LINK_MISSING",
           severity: "error",
@@ -44,7 +56,16 @@ export async function validateLinks(
       }
 
       if (target.fragment && path.posix.extname(targetPath).toLowerCase() === ".md") {
-        const targetDocument = await loadDocument(targetPath);
+        let targetDocument: DocumentFact;
+        try {
+          targetDocument = await loadDocument(targetPath);
+        } catch (error: unknown) {
+          if (error instanceof RepositoryPathError) {
+            findings.push(outsideRepositoryFinding(link.location, link.url));
+            continue;
+          }
+          throw error;
+        }
         if (!targetDocument.headings.some((heading) => heading.anchor === target.fragment)) {
           findings.push({
             rule: "DOC_LINK_ANCHOR_MISSING",
@@ -59,6 +80,16 @@ export async function validateLinks(
     }
   }
   return findings;
+}
+
+function outsideRepositoryFinding(location: Finding["document"], url: string): Finding {
+  return {
+    rule: "DOC_LINK_OUTSIDE_REPOSITORY",
+    severity: "error",
+    message: `Target "${url}" leaves the repository.`,
+    document: location,
+    suggestion: "Use a repository-relative path that stays within the checkout.",
+  };
 }
 
 function parseTarget(url: string): { path: string; fragment?: string; external: boolean } | undefined {

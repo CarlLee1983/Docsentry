@@ -1,6 +1,6 @@
 # Docsentry architecture
 
-**Status:** v0.4.0 release candidate; milestone 3 implementation is complete locally
+**Status:** v0.5.0 release candidate; milestone 4 implementation is complete locally
 
 ## Design decision
 
@@ -43,6 +43,8 @@ AST details or evidence-loading order.
 - The opt-in CLI `--changed <base>` resolves `changedPaths` through a local Git
   diff before invoking the engine; the engine selects direct documents and
   local contract dependencies without exposing Git to rules.
+- The Node repository adapter resolves filesystem paths before reading them and
+  rejects a symbolic link that points outside the checkout.
 - Invalid Docsentry configuration is an invocation error, not a Finding.
 - The packaged JSON Schema and runtime validator accept the same configuration
   properties; unknown properties are invocation errors.
@@ -72,8 +74,8 @@ package.
 | Verification engine | Turn one request into one report | Orchestration, rule selection, normalization, ordering |
 | Repository reader | Read files and list paths beneath one root | Node filesystem access; an in-memory adapter for tests |
 | Document parser | Produce headings, links, commands, and fenced blocks with locations | Markdown AST parsing and source-position recovery |
-| Evidence collector | Produce package, schema, and Action facts | Parse `package.json`, JSON Schema, and Action YAML |
-| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, Action, and pair comparisons |
+| Evidence collector | Produce package, schema, and Action facts | Parse `package.json`, JSON Schema, Action metadata, and source-located workflow YAML mappings |
+| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, and pair comparisons |
 | Reporter | Render an already-complete report | Terminal, JSON, and SARIF 2.1.0 formatting |
 
 The Repository reader has a real seam because production code needs a Node

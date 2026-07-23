@@ -3,7 +3,7 @@
 > Verify that repository documentation is supported by the code, configuration,
 > schemas, and GitHub Action definitions it describes.
 
-**Status:** v0.4.0 release candidate. Docsentry is dogfooded in its own CI and
+**Status:** v0.5.0 release candidate. Docsentry is dogfooded in its own CI and
 in the sibling Tagsmith repository; see the [changelog](CHANGELOG.md) for
 release details.
 
@@ -90,15 +90,21 @@ fence language (for example, <code>```json docsentry-config</code>) and set the
 same `schemaExamples[].fenceLabel`; unlabeled schema rules continue to validate
 every matching JSON or YAML block.
 
+For Action examples that include more than one `uses:` step, set
+`actionExamples[].uses` to the Action being documented (for example,
+`CarlLee1983/Docsentry`). Docsentry ignores the `@ref` suffix and validates
+only that Action's `with:` keys, reporting an unknown key at its exact YAML
+line.
+
 ## GitHub Actions
 
-The v0.3 composite Action runs the Docsentry code bundled with the Action
-revision, using Node.js 20. A repository workflow can use it as follows:
+The composite Action runs the Docsentry code bundled with the Action revision,
+using Node.js 20. A repository workflow can use it as follows:
 
 ```yaml
 steps:
   - uses: actions/checkout@v4
-  - uses: CarlLee1983/Docsentry@v0.4.0
+  - uses: CarlLee1983/Docsentry@v0.5.0
     with:
       config: .docsentry.json
       format: json
@@ -120,5 +126,5 @@ creates the GitHub Release with generated notes. npm publication remains a
 separate, deliberate step, guarded by `prepublishOnly`.
 
 To backfill a GitHub Release for an already-pushed tag, run `Publish GitHub
-Release` from the Actions page and provide that tag (for example, `v0.4.0`).
+Release` from the Actions page and provide that tag (for example, `v0.5.0`).
 The workflow is safe to re-run and never replaces an existing release.

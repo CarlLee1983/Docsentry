@@ -1,6 +1,6 @@
 # Docsentry product specification
 
-**Status:** v0.4.0 release candidate; milestone 3 implementation is complete locally
+**Status:** v0.5.0 release candidate; milestone 4 implementation is complete locally
 
 **Last updated:** 2026-07-23
 
@@ -40,8 +40,9 @@ language true.
 - `package.json` evidence: package name, `engines.node`, `bin`, and scripts.
 - JSON and YAML fenced code blocks, including JSON Schema validation when a
   configuration declares a schema.
-- GitHub Action input validation between Markdown examples and a local
-  `action.yml` / `action.yaml` file.
+- GitHub Action input validation between Markdown workflow examples and a local
+  `action.yml` / `action.yaml` file, optionally scoped to one documented
+  `uses:` reference.
 - Structural comparison of explicitly paired Markdown documents: headings,
   commands, and fenced code blocks.
 - Terminal, JSON, and SARIF 2.1.0 reports with non-zero exit status when error
@@ -78,6 +79,8 @@ about the evidence it can evaluate.
 For every local Markdown link or repository-relative asset reference:
 
 - The target file must exist.
+- A path that resolves outside the checkout through a symbolic link is outside
+  the contract and reports `DOC_LINK_OUTSIDE_REPOSITORY`.
 - A same-document or Markdown-file fragment must resolve to a heading anchor.
 - External URLs are outside the contract in v0.1.
 
@@ -119,7 +122,12 @@ Malformed JSON or YAML is itself a finding, even without a schema.
 
 For a configured Action definition, Docsentry extracts `with:` keys from YAML
 workflow examples and checks that every key is present in the Action's `inputs`.
-It does not execute a workflow or validate GitHub expressions in v0.1.
+An `actionExamples[].uses` value scopes the check to matching `uses:` mappings;
+the reference suffix after `@` is ignored, so `CarlLee1983/Docsentry` matches
+`CarlLee1983/Docsentry@v0.5.0`. Omitting `uses` preserves the original behavior
+of checking every `with:` mapping in the selected examples. Findings identify
+the unknown YAML key rather than only the enclosing code block. Docsentry does
+not execute a workflow or validate GitHub expressions in v0.1.
 
 ### Document-pair contract
 
@@ -165,7 +173,8 @@ schema, Action, package-identity, and document-pair contracts.
   "actionExamples": [
     {
       "documents": ["README.md"],
-      "action": "action.yml"
+      "action": "action.yml",
+      "uses": "CarlLee1983/Docsentry"
     }
   ],
   "documentPairs": [
@@ -186,6 +195,12 @@ paths. A schema example can set `fenceLabel` to validate only fenced blocks
 whose metadata contains that whitespace-separated label, such as
 <code>```json docsentry-config</code>. Omit it to preserve the default of
 validating every matching document and language pair.
+
+An Action example can set `uses` to the owner/repository or local Action
+reference shown in its workflow examples. Docsentry compares the reference
+without its `@ref` suffix and validates only that Action's `with:` mapping.
+Omit `uses` only when every `with:` mapping in the selected YAML examples is
+intended for the configured Action.
 
 ## Command interface
 

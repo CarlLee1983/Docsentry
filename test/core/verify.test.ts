@@ -69,7 +69,7 @@ echo different
       "DOC_ACTION_INPUT_UNKNOWN",
       "DOC_PAIR_COMMAND_MISMATCH",
     ]);
-    expect(report.findings.map((finding) => finding.document.line)).toEqual([3, 6, 9, 13, 4]);
+    expect(report.findings.map((finding) => finding.document.line)).toEqual([3, 6, 9, 19, 4]);
   });
 
   it("returns no finding for a valid local heading anchor and ignores external URLs", async () => {
@@ -169,8 +169,48 @@ jobs:
     const report = await engine.verify({ root: ".", changedPaths: ["action.yml"] });
 
     expect(report.findings).toMatchObject([
-      { rule: "DOC_ACTION_INPUT_UNKNOWN", document: { path: "docs/action.md", line: 1 } },
+      { rule: "DOC_ACTION_INPUT_UNKNOWN", document: { path: "docs/action.md", line: 7, column: 11 } },
     ]);
+  });
+
+  it("validates only the configured Action reference and locates an unknown input key", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          actionExamples: [
+            {
+              documents: ["README.md"],
+              action: "action.yml",
+              uses: "CarlLee1983/Docsentry",
+            },
+          ],
+        }),
+        "README.md": `\`\`\`yaml
+steps:
+  - uses: actions/setup-node@v4
+    with:
+      node-version: 20
+      not-an-input-for-this-action: true
+  - uses: CarlLee1983/Docsentry@v0.5.0
+    with:
+      config: .docsentry.json
+      misspelled-input: true
+\`\`\`
+`,
+        "action.yml": "name: Docsentry\ninputs:\n  config:\n    required: false\n",
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).resolves.toMatchObject({
+      findings: [
+        {
+          rule: "DOC_ACTION_INPUT_UNKNOWN",
+          message: expect.stringContaining('"misspelled-input"'),
+          document: { path: "README.md", line: 10, column: 7 },
+        },
+      ],
+      summary: { errors: 1, warnings: 0 },
+    });
   });
 
   it("includes documents that link to a changed or deleted local target", async () => {

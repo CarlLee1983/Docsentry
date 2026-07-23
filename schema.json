@@ -113,6 +113,10 @@
         },
         "action": {
           "$ref": "#/$defs/nonEmptyString"
+        },
+        "uses": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Optional GitHub Action reference to select from workflow examples. Its @ref suffix is ignored when matching."
         }
       }
     },

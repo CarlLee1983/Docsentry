@@ -20,6 +20,7 @@ export type SchemaExampleConfig = {
 export type ActionExampleConfig = {
   documents: readonly string[];
   action: string;
+  uses?: string;
 };
 
 export type DocumentPairConfig = {
@@ -116,10 +117,11 @@ function validateSchemaExample(input: unknown, source: string): SchemaExampleCon
 
 function validateActionExample(input: unknown, source: string): ActionExampleConfig {
   const value = object(input, source);
-  allowOnly(value, ["documents", "action"], source);
+  allowOnly(value, ["documents", "action", "uses"], source);
   return {
     documents: requiredStrings(value.documents, "documents", source),
     action: requiredString(value.action, "action", source),
+    uses: optionalString(value.uses, "uses", source),
   };
 }
 
