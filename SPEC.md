@@ -1,6 +1,6 @@
 # Docsentry product specification
 
-**Status:** v0.5.0 release candidate; milestone 4 implementation is complete locally
+**Status:** v0.5.0 released; milestone 4 implementation is complete
 
 **Last updated:** 2026-07-23
 

@@ -1,6 +1,6 @@
 # Docsentry architecture
 
-**Status:** v0.5.0 release candidate; milestone 4 implementation is complete locally
+**Status:** v0.5.0 released; milestone 4 implementation is complete
 
 ## Design decision
 
