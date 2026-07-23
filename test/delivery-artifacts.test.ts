@@ -1,10 +1,19 @@
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 import { Ajv } from "ajv";
 import YAML from "yaml";
 import { describe, expect, it } from "vitest";
 
+import { verifyRepository } from "../src/core/verify.js";
+
 describe("delivery artifacts", () => {
+  it("dogfoods the committed configuration against Docsentry's own documentation and Action example", async () => {
+    const report = await verifyRepository({ root: fileURLToPath(new URL("../", import.meta.url)) });
+
+    expect(report).toEqual({ findings: [], summary: { errors: 0, warnings: 0 } });
+  });
+
   it("validates the documented Tagsmith configuration with the packaged schema", async () => {
     const schema = JSON.parse(await readFile(new URL("../schema.json", import.meta.url), "utf8"));
     const example = JSON.parse(

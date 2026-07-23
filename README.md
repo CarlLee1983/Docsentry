@@ -3,8 +3,9 @@
 > Verify that repository documentation is supported by the code, configuration,
 > schemas, and GitHub Action definitions it describes.
 
-**Status:** v0.4.0 release candidate. The next CI-adoption step is dogfooding
-against Tagsmith; see the [changelog](CHANGELOG.md) for release details.
+**Status:** v0.4.0 release candidate. Docsentry is dogfooded in its own CI and
+in the sibling Tagsmith repository; see the [changelog](CHANGELOG.md) for
+release details.
 
 Docsentry is a deterministic CLI and CI tool for maintainers of repositories
 with user-facing documentation. It finds documentation drift such as obsolete

@@ -26,5 +26,13 @@
       "language": "json",
       "schema": "schema.json"
     }
+  ],
+  "actionExamples": [
+    {
+      "documents": [
+        "README.md"
+      ],
+      "action": "action.yml"
+    }
   ]
 }

@@ -3,6 +3,15 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## Unreleased
+
+### Changed
+
+- Completed CI adoption by upgrading the Tagsmith documentation-governance
+  workflow and its configuration schema reference to Docsentry v0.4.0.
+- Docsentry now dogfoods validation of the GitHub Action example in its own
+  README.
+
 ## v0.4.0 — 2026-07-23
 
 ### Added

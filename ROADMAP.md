@@ -34,7 +34,7 @@ Deliverables:
 Exit condition: a deliberately broken fixture produces independently testable,
 source-located Findings for each rule.
 
-## Milestone 2 — CI adoption — in progress
+## Milestone 2 — CI adoption — complete
 
 Deliverables:
 
@@ -49,8 +49,9 @@ v0.2.0 delivery:
   the runtime rejects unknown configuration properties.
 - `action.yml` is a composite Action that builds its pinned source revision,
   then runs `check` in the caller's repository.
-- This repository's CI dogfoods that Action. The pending adoption item is a
-  corresponding workflow in the sibling Tagsmith repository.
+- This repository's CI dogfoods that Action, including its documented Action
+  example. The sibling Tagsmith repository runs the released v0.4 Action in
+  its documentation-governance workflow.
 
 Exit condition: a documentation-only PR can be rejected by CI with a concise,
 actionable error report.
