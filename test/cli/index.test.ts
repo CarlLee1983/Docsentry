@@ -16,6 +16,29 @@ afterEach(async () => {
 });
 
 describe("docsentry CLI", () => {
+  it("provides stable top-level and check command help without reading a repository", async () => {
+    const output: string[] = [];
+
+    expect(
+      await main(["--help"], {
+        stdout: (message) => output.push(message),
+        stderr: () => undefined,
+      }),
+    ).toBe(0);
+    expect(output.join("")).toBe(
+      "Usage: docsentry <command> [options]\n\nCommands:\n  init                 Create a starter .docsentry.json configuration.\n  check [paths...]     Verify documentation contracts.\n  inspect <document>   Print extracted document facts.\n\nRun docsentry help <command> for command-specific options.\n",
+    );
+
+    output.splice(0);
+    expect(
+      await main(["check", "--help"], {
+        stdout: (message) => output.push(message),
+        stderr: () => undefined,
+      }),
+    ).toBe(0);
+    expect(output.join("")).toContain("--format <format> Render terminal (default), json, or sarif output.");
+  });
+
   it("returns a failing status and the JSON report for a documentation finding", async () => {
     const root = await fixture({ "README.md": "[Missing](missing.md)\n" });
     const output: string[] = [];
@@ -33,6 +56,41 @@ describe("docsentry CLI", () => {
       expect(JSON.parse(output.join(""))).toMatchObject({
         findings: [{ rule: "DOC_LINK_MISSING", document: { path: "README.md", line: 1 } }],
         summary: { errors: 1, warnings: 0 },
+      });
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("returns a failing status and a SARIF 2.1.0 report for a documentation finding", async () => {
+    const root = await fixture({ "README.md": "[Missing](missing.md)\n" });
+    const output: string[] = [];
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(
+        await main(["check", "--format", "sarif"], {
+          stdout: (message) => output.push(message),
+          stderr: () => undefined,
+        }),
+      ).toBe(1);
+
+      expect(JSON.parse(output.join(""))).toMatchObject({
+        version: "2.1.0",
+        runs: [
+          {
+            tool: { driver: { name: "Docsentry", rules: [{ id: "DOC_LINK_MISSING" }] } },
+            results: [
+              {
+                ruleId: "DOC_LINK_MISSING",
+                level: "error",
+                locations: [
+                  { physicalLocation: { artifactLocation: { uri: "README.md", uriBaseId: "%SRCROOT%" } } },
+                ],
+              },
+            ],
+          },
+        ],
       });
     } finally {
       process.chdir(originalDirectory);

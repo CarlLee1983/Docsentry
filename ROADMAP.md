@@ -55,14 +55,14 @@ v0.2.0 delivery:
 Exit condition: a documentation-only PR can be rejected by CI with a concise,
 actionable error report.
 
-## Milestone 3 — focused review workflows — in progress
+## Milestone 3 — focused review workflows — complete locally
 
 Deliverables:
 
 - `check --changed <base>` for PR-scale execution — complete locally.
-- SARIF reporter or GitHub PR annotations.
-- Explicit CLI help contract, using opt-in trusted command execution only where
-  static evidence is insufficient.
+- SARIF 2.1.0 reporter — complete locally.
+- Explicit CLI help contract; `--changed` remains the only opt-in mode that
+  invokes a trusted local Git command.
 
 Exit condition: a maintainer can see which changed source or document invalidated
 which contract without scanning the full repository report.

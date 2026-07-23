@@ -3,6 +3,15 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## v0.4.0 — 2026-07-23
+
+### Added
+
+- `docsentry check --format sarif`, which renders Findings as a SARIF 2.1.0
+  log with source locations, related evidence locations, and suggestions.
+- Stable command help through `docsentry --help`, `docsentry help <command>`,
+  and command-level `--help` / `-h` aliases.
+
 ## v0.3.0 — 2026-07-23
 
 ### Added

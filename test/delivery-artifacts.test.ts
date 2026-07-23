@@ -42,11 +42,12 @@ describe("delivery artifacts", () => {
 
   it("declares a composite Action that works with and without a configuration", async () => {
     const action = YAML.parse(await readFile(new URL("../action.yml", import.meta.url), "utf8")) as {
-      inputs: { config: { default: string } };
+      inputs: { config: { default: string }; format: { description: string } };
       runs: { using: string; steps: Array<{ run?: string }> };
     };
 
     expect(action.inputs.config.default).toBe("");
+    expect(action.inputs.format.description).toContain("sarif");
     expect(action.runs.using).toBe("composite");
     expect(action.runs.steps.some((step) => step.run?.includes('if [[ -n "$DOCSENTRY_CONFIG" ]]'))).toBe(true);
   });

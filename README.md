@@ -3,7 +3,7 @@
 > Verify that repository documentation is supported by the code, configuration,
 > schemas, and GitHub Action definitions it describes.
 
-**Status:** v0.3.0 release candidate. The next CI-adoption step is dogfooding
+**Status:** v0.4.0 release candidate. The next CI-adoption step is dogfooding
 against Tagsmith; see the [changelog](CHANGELOG.md) for release details.
 
 Docsentry is a deterministic CLI and CI tool for maintainers of repositories
@@ -48,6 +48,7 @@ npm test          # run the verification fixture tests
 npm run check     # type-check without emitting files
 npm run build     # compile the CLI to dist/
 node dist/cli/index.js check --format json
+node dist/cli/index.js check --format sarif > docsentry.sarif
 npm run tag:next  # preview the next release tag with Tagsmith
 ```
 
@@ -57,6 +58,14 @@ checks. To limit a review to a pull request's affected documentation, use
 `docsentry check --changed origin/main`; Docsentry compares the Git merge base
 with `HEAD` and checks changed documents plus their local documentation
 dependencies. See `SPEC.md` for the complete contract and remaining refinements.
+
+Run `docsentry --help` for the command overview or `docsentry help check` for
+the complete `check` option contract. Help is available without reading a
+repository or configuration file.
+
+Use `--format sarif` to emit a SARIF 2.1.0 report for a code-scanning
+consumer. Paths in the report are repository-relative and source-located; the
+command keeps the normal non-zero exit status when it reports errors.
 
 ## Configuration
 
@@ -88,14 +97,15 @@ revision, using Node.js 20. A repository workflow can use it as follows:
 ```yaml
 steps:
   - uses: actions/checkout@v4
-  - uses: CarlLee1983/Docsentry@v0.3.0
+  - uses: CarlLee1983/Docsentry@v0.4.0
     with:
       config: .docsentry.json
       format: json
 ```
 
 Leave `config` unset to check every Markdown document without configuration.
-The Action never executes commands extracted from documentation.
+`format` accepts `terminal`, `json`, or `sarif`. The Action never executes
+commands extracted from documentation.
 
 ## Releases
 
@@ -109,5 +119,5 @@ creates the GitHub Release with generated notes. npm publication remains a
 separate, deliberate step, guarded by `prepublishOnly`.
 
 To backfill a GitHub Release for an already-pushed tag, run `Publish GitHub
-Release` from the Actions page and provide that tag (for example, `v0.3.0`).
+Release` from the Actions page and provide that tag (for example, `v0.4.0`).
 The workflow is safe to re-run and never replaces an existing release.

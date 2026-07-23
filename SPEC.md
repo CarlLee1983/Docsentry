@@ -1,6 +1,6 @@
 # Docsentry product specification
 
-**Status:** v0.3.0 release candidate; milestone 3 is in development
+**Status:** v0.4.0 release candidate; milestone 3 implementation is complete locally
 
 **Last updated:** 2026-07-23
 
@@ -44,7 +44,8 @@ language true.
   `action.yml` / `action.yaml` file.
 - Structural comparison of explicitly paired Markdown documents: headings,
   commands, and fenced code blocks.
-- Terminal and JSON reports with non-zero exit status when error findings exist.
+- Terminal, JSON, and SARIF 2.1.0 reports with non-zero exit status when error
+  findings exist.
 
 ### Explicit non-goals for version 0.1
 
@@ -191,9 +192,12 @@ validating every matching document and language pair.
 The initial CLI surface stays small:
 
 ```bash
+docsentry --help
+docsentry help check
 docsentry init
 docsentry check [paths...]
 docsentry check --config .docsentry.json --format json
+docsentry check --format sarif
 docsentry check --changed origin/main
 docsentry inspect README.md
 ```
@@ -202,12 +206,9 @@ docsentry inspect README.md
 all applicable rules and returns every Finding; it must not stop at the first
 failure. `inspect` is a diagnostic command that shows the extracted links,
 commands, code blocks, and headings for one Document without passing judgment.
-
-Planned but not part of v0.1:
-
-```bash
-docsentry check --format sarif
-```
+`docsentry --help` and `docsentry help <command>` return usage text with status
+zero and do not read repository files. The `--help` and `-h` aliases are also
+accepted immediately after each command.
 
 `--changed <base>` is an opt-in focused-review mode. It obtains local paths
 from `git diff <base>...HEAD`, including deletions, and cannot be combined with
@@ -234,6 +235,13 @@ type Finding = {
 
 JSON output must contain a `findings` array and a summary of error and warning
 counts. Rule identifiers are a compatibility surface once released.
+
+`--format sarif` emits a SARIF 2.1.0 log. Each Finding becomes one result with
+its rule ID, severity, message, and repository-relative document location.
+When present, evidence is rendered as a related location and the suggested
+remediation is retained in the result properties. This lets code-scanning
+consumers surface Docsentry diagnostics without losing the normal terminal or
+JSON interfaces.
 
 ### Rule identifiers
 

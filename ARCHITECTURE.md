@@ -1,6 +1,6 @@
 # Docsentry architecture
 
-**Status:** v0.3.0 release candidate; milestone 3 is in development
+**Status:** v0.4.0 release candidate; milestone 3 implementation is complete locally
 
 ## Design decision
 
@@ -74,7 +74,7 @@ package.
 | Document parser | Produce headings, links, commands, and fenced blocks with locations | Markdown AST parsing and source-position recovery |
 | Evidence collector | Produce package, schema, and Action facts | Parse `package.json`, JSON Schema, and Action YAML |
 | Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, Action, and pair comparisons |
-| Reporter | Render an already-complete report | Terminal and JSON formatting |
+| Reporter | Render an already-complete report | Terminal, JSON, and SARIF 2.1.0 formatting |
 
 The Repository reader has a real seam because production code needs a Node
 filesystem adapter while unit tests need an in-memory fixture adapter. The
@@ -127,4 +127,4 @@ src/
   fenced blocks.
 - JSON Schema validation uses Ajv; YAML parsing uses `yaml` with safe,
   non-executing parsing.
-- SARIF and GitHub annotations are reporters added after JSON output is stable.
+- GitHub PR annotations may be added after the SARIF report is stable.
