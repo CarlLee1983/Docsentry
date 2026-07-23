@@ -81,7 +81,7 @@ Deliverables:
 Exit condition: a workflow example containing several Actions reports only an
 unknown input belonging to the configured Action, at that input's source line.
 
-## Open decisions
+## Resolved decisions
 
 | Decision | Current default | Resolve before |
 | --- | --- | --- |
@@ -90,4 +90,4 @@ unknown input belonging to the configured Action, at that input's source line.
 | Config filename | `.docsentry.json` | Resolved for v0.2 |
 | Markdown parser | remark with source locations | Resolved in v0.1.0 |
 | YAML parser | `yaml` with safe parsing | Resolved in v0.1.0 |
-| Warning policy | Warnings do not fail CI by default | Reporter implementation |
+| Warning policy | Warnings are reported but do not fail CI by default | Resolved in v0.1.0 |
