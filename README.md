@@ -170,6 +170,32 @@ listed without children covers everything beneath it, and `ignore` excludes
 generated files. A line the parser cannot place reports `DOC_TREE_UNPARSED` as
 a warning instead of being dropped.
 
+A document that lists a closed set — rule identifiers, error codes, supported
+values — can be compared with the code that defines it:
+
+```json
+{
+  "enumerations": [
+    {
+      "documents": ["SPEC.md"],
+      "label": "rule identifier",
+      "values": { "sources": ["src/core/rules/*.ts"], "pattern": "\"(DOC_[A-Z_]+)\"" },
+      "documented": { "pattern": "DOC_[A-Z_]+", "section": "Rule identifiers" }
+    }
+  ]
+}
+```
+
+The documented set is every inline code span matching `documented.pattern` in
+full, optionally limited to one section. The defined set is every match of
+`values.pattern` in the selected files. A value missing from the document
+reports `DOC_ENUM_UNDOCUMENTED`; a documented value the code does not define
+reports `DOC_ENUM_UNKNOWN` at its code span.
+
+Collection is textual: Docsentry does not parse the source language, so a
+value in a comment still counts. Docsentry uses this contract on its own rule
+identifier table in [SPEC.md](SPEC.md).
+
 ## Baseline
 
 A repository whose documentation has already drifted does not have to fix

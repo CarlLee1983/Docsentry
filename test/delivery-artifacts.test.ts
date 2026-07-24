@@ -118,6 +118,29 @@ describe("delivery artifacts", () => {
     expect(validate(tree({ unsupported: true }))).toBe(false);
   });
 
+  it("accepts the same enumeration configuration as the runtime validator", async () => {
+    const schema = JSON.parse(await readFile(new URL("../schema.json", import.meta.url), "utf8"));
+    const validate = new Ajv({ strict: false }).compile(schema);
+    const enumeration = (overrides: Record<string, unknown>) => ({
+      enumerations: [
+        {
+          documents: ["SPEC.md"],
+          label: "rule identifier",
+          values: { sources: ["src/core/rules/*.ts"], pattern: '"(DOC_[A-Z_]+)"' },
+          documented: { pattern: "DOC_[A-Z_]+" },
+          ...overrides,
+        },
+      ],
+    });
+
+    expect(validate(enumeration({}))).toBe(true);
+    expect(validate(enumeration({ documented: { pattern: "DOC_[A-Z_]+", section: "Rule identifiers" } }))).toBe(true);
+    expect(validate(enumeration({ label: "" }))).toBe(false);
+    expect(validate(enumeration({ values: { sources: ["src/**"] } }))).toBe(false);
+    expect(validate(enumeration({ documented: { section: "Rule identifiers" } }))).toBe(false);
+    expect(validate(enumeration({ unsupported: true }))).toBe(false);
+  });
+
   it("publishes verified version tags as idempotent GitHub Releases", async () => {
     const release = YAML.parse(
       await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8"),
