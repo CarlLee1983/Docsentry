@@ -51,6 +51,8 @@ language true.
   listing.
 - Declared ASCII directory trees, compared against the repository in a
   documented-paths-exist or exact mode.
+- Declared enumerations, compared against literal values collected from
+  selected source files.
 - Terminal, JSON, and SARIF 2.1.0 reports with non-zero exit status when error
   findings exist.
 
@@ -233,6 +235,34 @@ may restate. Two comparison modes are available:
   covers every file beneath it, so a tree can summarise a subtree instead of
   enumerating it, and `ignore` patterns exclude generated files.
 
+### Enumeration contract
+
+A document that lists a closed set — rule identifiers, error codes, supported
+option values — restates something the code already knows. An enumeration
+contract compares the two sets and reports each difference:
+
+- `DOC_ENUM_UNDOCUMENTED` for a value the sources define that the document does
+  not list, located at the document's start and evidenced by the file that
+  states it.
+- `DOC_ENUM_UNKNOWN` for a documented value the sources do not define, located
+  at its code span.
+- `DOC_ENUM_SOURCE_UNAVAILABLE` when no file matches `values.sources`, because
+  an empty evidence set would otherwise report every documented value as
+  unknown.
+- `DOC_ENUM_SECTION_MISSING` when a configured `documented.section` heading
+  does not exist.
+
+The documented set is every inline code span that matches `documented.pattern`
+in full, optionally limited to one section by heading text. The defined set is
+every match of `values.pattern` in the selected source files, using its first
+capture group when it has one.
+
+Value collection is textual on purpose. Docsentry does not parse the source
+language, so a value inside a comment or an unreachable branch still counts,
+and a pattern narrower than the code's actual spelling reports its own mismatch
+rather than failing silently. This keeps the contract deterministic and
+language-independent; it is a list comparison, not source-code analysis.
+
 ## Configuration
 
 The configuration filename is `.docsentry.json`. Configuration is
@@ -297,6 +327,14 @@ schema, Action, package-identity, and document-pair contracts.
       "root": "src",
       "mode": "exact",
       "ignore": ["**/*.generated.ts"]
+    }
+  ],
+  "enumerations": [
+    {
+      "documents": ["SPEC.md"],
+      "label": "rule identifier",
+      "values": { "sources": ["src/core/rules/*.ts"], "pattern": "\"(DOC_[A-Z_]+)\"" },
+      "documented": { "pattern": "DOC_[A-Z_]+", "section": "Rule identifiers" }
     }
   ]
 }
@@ -435,6 +473,7 @@ JSON interfaces.
 | Version references | `DOC_VERSION_STALE`, `DOC_VERSION_REFERENCE_MISSING`, `DOC_VERSION_EVIDENCE_UNAVAILABLE` |
 | Path references | `DOC_PATH_MISSING` |
 | Directory trees | `DOC_TREE_PATH_MISSING`, `DOC_TREE_PATH_UNDOCUMENTED`, `DOC_TREE_UNPARSED` |
+| Enumerations | `DOC_ENUM_UNDOCUMENTED`, `DOC_ENUM_UNKNOWN`, `DOC_ENUM_SOURCE_UNAVAILABLE`, `DOC_ENUM_SECTION_MISSING` |
 
 ## Acceptance criteria for the first usable release
 

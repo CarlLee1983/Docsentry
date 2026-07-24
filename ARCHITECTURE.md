@@ -80,8 +80,8 @@ package.
 | Verification engine | Turn one request into one report | Orchestration, rule selection, normalization, ordering |
 | Repository reader | Read files and list paths beneath one root | Node filesystem access; an in-memory adapter for tests |
 | Document parser | Produce headings, links, commands, fenced blocks, code spans, and directory trees with locations | Markdown AST parsing, ASCII tree parsing, and source-position recovery |
-| Evidence collector | Produce package, schema, and Action facts | Parse `package.json`, JSON Schema, Action metadata, and source-located workflow YAML mappings |
-| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, pair, version-reference, path-reference, and directory-tree comparisons |
+| Evidence collector | Produce package, schema, Action, and literal facts | Parse `package.json`, JSON Schema, Action metadata, source-located workflow YAML mappings, and pattern-matched literals from selected source files |
+| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, pair, version-reference, path-reference, directory-tree, and enumeration comparisons |
 | Reporter | Render an already-complete report | Terminal, JSON, and SARIF 2.1.0 formatting |
 
 The Repository reader has a real seam because production code needs a Node
@@ -111,6 +111,7 @@ src/
       version.ts
       path.ts
       tree.ts
+      enumeration.ts
   repository/
     reader.ts           # Repository reader Interface
     node-reader.ts      # production Adapter
@@ -125,6 +126,7 @@ src/
     package.ts
     structured.ts       # JSON Schema and YAML example evidence
     github-action.ts
+    literals.ts         # textual literal collection from source files
   cli/
     index.ts
     init.ts

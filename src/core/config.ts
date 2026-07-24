@@ -55,6 +55,13 @@ export type DirectoryTreeConfig = {
   ignore?: readonly string[];
 };
 
+export type EnumerationConfig = {
+  documents: readonly string[];
+  label: string;
+  values: { sources: readonly string[]; pattern: string };
+  documented: { pattern: string; section?: string };
+};
+
 export type DocsentryConfig = {
   documents?: readonly string[];
   package?: { manifest?: string; assertions?: readonly PackageAssertion[] };
@@ -64,6 +71,7 @@ export type DocsentryConfig = {
   versionReferences?: readonly VersionReferenceConfig[];
   pathReferences?: readonly PathReferenceConfig[];
   directoryTrees?: readonly DirectoryTreeConfig[];
+  enumerations?: readonly EnumerationConfig[];
 };
 
 export async function loadConfig(
@@ -104,6 +112,7 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
       "versionReferences",
       "pathReferences",
       "directoryTrees",
+      "enumerations",
     ],
     source,
   );
@@ -128,6 +137,9 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
   const directoryTrees = optionalArray(value.directoryTrees, "directoryTrees", source)?.map((entry, index) =>
     validateDirectoryTree(entry, `${source}: directoryTrees[${index}]`),
   );
+  const enumerations = optionalArray(value.enumerations, "enumerations", source)?.map((entry, index) =>
+    validateEnumeration(entry, `${source}: enumerations[${index}]`),
+  );
   return {
     documents,
     package: packageConfig,
@@ -137,7 +149,41 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
     versionReferences,
     pathReferences,
     directoryTrees,
+    enumerations,
   };
+}
+
+function validateEnumeration(input: unknown, source: string): EnumerationConfig {
+  const value = object(input, source);
+  allowOnly(value, ["documents", "label", "values", "documented"], source);
+
+  const values = object(value.values, `${source}: values`);
+  allowOnly(values, ["sources", "pattern"], `${source}: values`);
+  const documented = object(value.documented, `${source}: documented`);
+  allowOnly(documented, ["pattern", "section"], `${source}: documented`);
+
+  return {
+    documents: requiredStrings(value.documents, "documents", source),
+    label: requiredString(value.label, "label", source),
+    values: {
+      sources: requiredStrings(values.sources, "values.sources", source),
+      pattern: requiredExpression(values.pattern, "values.pattern", source),
+    },
+    documented: {
+      pattern: requiredExpression(documented.pattern, "documented.pattern", source),
+      section: optionalString(documented.section, "documented.section", source),
+    },
+  };
+}
+
+function requiredExpression(input: unknown, field: string, source: string): string {
+  const pattern = requiredString(input, field, source);
+  try {
+    new RegExp(pattern);
+  } catch {
+    throw new InvocationError(`${source}: ${field} must be a valid regular expression`);
+  }
+  return pattern;
 }
 
 function validatePackage(input: unknown, source: string): DocsentryConfig["package"] {

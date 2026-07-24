@@ -114,8 +114,10 @@ this project.
 
 Deliverables:
 
-- `docsentry baseline` and `check --baseline <path>`, keyed on document and
-  rule identifier — complete and unreleased.
+- `docsentry baseline` and a `check` that discovers it, matching recorded
+  messages before falling back to counts — complete and unreleased.
+- An enumeration contract, so a documented list of values is verified against
+  the code that defines it instead of by hand — complete and unreleased.
 
 Exit condition: an existing repository can enable Docsentry in CI in one
 commit, failing only on documentation that changes afterwards.

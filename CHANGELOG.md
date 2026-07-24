@@ -16,6 +16,11 @@ All notable Docsentry changes are recorded here. Release tags follow the
   applied, and the terminal report names how many baseline entries no longer
   match.
 
+- An enumeration contract. `enumerations` compares a documented list of values
+  with literals collected from selected source files, reporting
+  `DOC_ENUM_UNDOCUMENTED`, `DOC_ENUM_UNKNOWN`, `DOC_ENUM_SOURCE_UNAVAILABLE`,
+  and `DOC_ENUM_SECTION_MISSING`. Docsentry applies it to its own rule
+  identifier table, which was previously kept in step by hand.
 - `pathReferences[].exclude` removes paths from a selection, for a filename
   documentation names as a convention rather than a committed file.
 
