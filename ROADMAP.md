@@ -141,6 +141,55 @@ v0.9.0 delivery:
 Exit condition: an existing repository can enable Docsentry in CI in one
 commit, failing only on documentation that changes afterwards.
 
+## Milestone 7 — contracts a maintainer can adopt without reading the specification
+
+Milestone 6 removed one adoption obstacle and revealed the next. A repository
+can now silence the findings it starts with, but `docsentry init` writes only a
+document selector, so every contract that catches real drift is reached by
+reading this specification and hand-writing JSON. The sibling Tagsmith
+configuration runs to eighty lines and includes two nested JSON pointers. Nobody
+writes that on their first day, so a new adopter enables link checking and
+stops there.
+
+The obstacle is the cost of declaring a contract, not the cost of running one.
+
+Deliverables:
+
+- A suggestion command that reads a checkout and proposes contracts, each
+  justified by the artifact that supports it: a manifest value a document
+  already restates, a workflow example that references the repository's own
+  Action, a version literal that already equals the manifest version, a
+  translated document beside its canonical original, inline code spans that
+  already resolve to committed files.
+- Each proposal states what adopting it would cost, as the findings it would
+  produce against the current checkout. A maintainer decides knowing whether a
+  contract is already satisfied or reports drift on the first run.
+- Proposals are written for review. A repository with no configuration may
+  receive one directly; an existing configuration is never rewritten, because
+  silently editing a committed file is the behaviour this product refuses
+  everywhere else.
+- The suggestion path produces no Finding and carries no exit status of its
+  own. It drafts; `check` continues to evaluate only contracts a maintainer has
+  declared and committed.
+
+Not included: enumerations. Proposing one requires guessing both a source
+pattern and the document section that lists its values, and a wrong guess
+produces a contract that looks authoritative while checking the wrong set. The
+other contracts can each be justified by an exact match against an artifact
+that already exists; an enumeration cannot, so it stays hand-written.
+
+This milestone sits closest to the product's first principle, so the boundary
+is stated rather than assumed: a proposal is a draft addressed to a maintainer,
+never evidence and never a Finding. Inference is confined to the drafting
+command. The checking path remains what it has always been — declared
+contracts, local evidence, and nothing inferred.
+
+Exit condition: a repository that has never used Docsentry runs one command,
+reads the proposals, and commits a configuration that reports real drift
+without consulting `SPEC.md`. Measured against the sibling Tagsmith checkout,
+the proposals reconstruct its hand-written contracts apart from the
+enumeration.
+
 ## Resolved decisions
 
 | Decision | Current default | Resolve before |
