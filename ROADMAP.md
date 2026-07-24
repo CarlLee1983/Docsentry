@@ -141,7 +141,7 @@ v0.9.0 delivery:
 Exit condition: an existing repository can enable Docsentry in CI in one
 commit, failing only on documentation that changes afterwards.
 
-## Milestone 7 — contracts a maintainer can adopt without reading the specification
+## Milestone 7 — contracts a maintainer can adopt without reading the specification — implemented
 
 Milestone 6 removed one adoption obstacle and revealed the next. A repository
 can now silence the findings it starts with, but `docsentry init` writes only a
@@ -183,6 +183,25 @@ is stated rather than assumed: a proposal is a draft addressed to a maintainer,
 never evidence and never a Finding. Inference is confined to the drafting
 command. The checking path remains what it has always been — declared
 contracts, local evidence, and nothing inferred.
+
+Delivery:
+
+- Run against the sibling Tagsmith checkout as though it had never adopted
+  Docsentry, `suggest` proposes nine contracts. It reconstructs the package
+  assertions on the same document the maintainer chose, the Action example
+  with a more precise `uses` than the committed configuration carries, and the
+  path references. The schema example is reconstructed only in part: the
+  correct schema, but a wider document selection and no `fenceLabel`, which
+  the proposal's own cost — seven findings — makes visible. It also proposes
+  four document pairs the hand-written configuration never declared.
+- Dogfooding corrected three detectors before they were trusted. A `/bin`
+  assertion was proposed against a pointer that reaches the path a command
+  runs rather than its name, so the contract would have failed the moment it
+  was adopted; the candidate was removed. A package assertion recognised only
+  inline code spans while the rule searches the whole document, so proposals
+  landed on a changelog instead of the README that states the same value. Both
+  faults were of one kind: a detector that does not recognise evidence the way
+  its rule does.
 
 Exit condition: a repository that has never used Docsentry runs one command,
 reads the proposals, and commits a configuration that reports real drift

@@ -312,6 +312,46 @@ steps:
       { rule: "DOC_PAIR_COMMAND_MISMATCH", document: { path: "docs/README.zh-TW.md", line: 2 } },
     ]);
   });
+
+  it("verifies a configuration supplied by the caller instead of reading one from disk", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": "{ this file would fail to parse",
+        "package.json": JSON.stringify({ name: "@scope/package" }),
+        "README.md": "# Package\n\nInstall `@scope/renamed` from the registry.\n",
+      }),
+    );
+
+    const report = await engine.verify({
+      root: ".",
+      config: {
+        documents: ["README.md"],
+        package: {
+          manifest: "package.json",
+          assertions: [
+            { document: "README.md", label: "published package name", value: "@scope/renamed", evidence: "/name" },
+          ],
+        },
+      },
+    });
+
+    expect(report.findings).toMatchObject([
+      { rule: "DOC_PACKAGE_ASSERTION_MISMATCH", document: { path: "README.md" } },
+    ]);
+  });
+
+  it("rejects a request that both supplies a configuration and names one to read", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({ documents: ["README.md"] }),
+        "README.md": "# Package\n",
+      }),
+    );
+
+    await expect(
+      engine.verify({ root: ".", config: { documents: ["README.md"] }, configPath: ".docsentry.json" }),
+    ).rejects.toBeInstanceOf(InvocationError);
+  });
 });
 
 describe("Markdown parser", () => {

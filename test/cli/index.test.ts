@@ -26,7 +26,7 @@ describe("docsentry CLI", () => {
       }),
     ).toBe(0);
     expect(output.join("")).toBe(
-      "Usage: docsentry <command> [options]\n\nCommands:\n  init                 Create a starter .docsentry.json configuration.\n  check [paths...]     Verify documentation contracts.\n  baseline             Record current findings so only new ones fail.\n  inspect <document>   Print extracted document facts.\n\nRun docsentry help <command> for command-specific options.\n",
+      "Usage: docsentry <command> [options]\n\nCommands:\n  init                 Create a starter .docsentry.json configuration.\n  suggest              Draft the contracts this checkout supports.\n  check [paths...]     Verify documentation contracts.\n  baseline             Record current findings so only new ones fail.\n  inspect <document>   Print extracted document facts.\n\nRun docsentry help <command> for command-specific options.\n",
     );
 
     output.splice(0);
@@ -113,6 +113,78 @@ describe("docsentry CLI", () => {
       const error: string[] = [];
       expect(await main(["init"], { stdout: () => undefined, stderr: (message) => error.push(message) })).toBe(2);
       expect(error.join("")).toContain("already exists; it was not changed");
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("prints proposed contracts with their evidence and cost, and writes nothing", async () => {
+    const root = await fixture({
+      "package.json": JSON.stringify({ name: "@scope/widget", version: "2.0.0" }),
+      "README.md": "# Widget\n\nInstall `@scope/widget` from `src/index.ts` and `src/gone.ts`.\n",
+      "src/index.ts": "export const widget = 2;\n",
+    });
+    const output: string[] = [];
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(await main(["suggest"], { stdout: (message) => output.push(message), stderr: () => undefined })).toBe(0);
+      const printed = output.join("");
+
+      expect(printed).toContain("published package name");
+      expect(printed).toContain("which is the value at /name in package.json");
+      expect(printed).toContain("reports 1 error");
+      expect(printed).toContain("Nothing was written");
+      await expect(readFixture(root, ".docsentry.json")).rejects.toThrow();
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("refuses to rewrite a configuration that already exists", async () => {
+    const root = await fixture({
+      ".docsentry.json": JSON.stringify({ documents: ["README.md"] }),
+      "package.json": JSON.stringify({ name: "@scope/widget", version: "2.0.0" }),
+      "README.md": "# Widget\n\nInstall `@scope/widget`.\n",
+    });
+    const output: string[] = [];
+    const error: string[] = [];
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(
+        await main(["init", "--suggest"], { stdout: () => undefined, stderr: (message) => error.push(message) }),
+      ).toBe(2);
+      expect(error.join("")).toContain("already exists; it was not changed");
+
+      expect(await main(["suggest"], { stdout: (message) => output.push(message), stderr: () => undefined })).toBe(0);
+      expect(JSON.parse(await readFixture(root, ".docsentry.json"))).toEqual({ documents: ["README.md"] });
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("writes the proposed contracts as a starter configuration", async () => {
+    const root = await fixture({
+      "package.json": JSON.stringify({ name: "@scope/widget", version: "2.0.0" }),
+      "README.md": "# Widget\n\nInstall `@scope/widget`.\n",
+    });
+    const output: string[] = [];
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(
+        await main(["init", "--suggest"], { stdout: (message) => output.push(message), stderr: () => undefined }),
+      ).toBe(0);
+      expect(JSON.parse(await readFixture(root, ".docsentry.json"))).toMatchObject({
+        $schema: "./node_modules/@carllee1983/docsentry/schema.json",
+        documents: ["README.md"],
+        package: {
+          manifest: "package.json",
+          assertions: [{ document: "README.md", value: "@scope/widget", evidence: "/name" }],
+        },
+      });
+      expect(output.join("")).toContain("Created .docsentry.json");
     } finally {
       process.chdir(originalDirectory);
     }
