@@ -141,7 +141,7 @@ v0.9.0 delivery:
 Exit condition: an existing repository can enable Docsentry in CI in one
 commit, failing only on documentation that changes afterwards.
 
-## Milestone 7 — contracts a maintainer can adopt without reading the specification — implemented
+## Milestone 7 — contracts a maintainer can adopt without reading the specification — complete in v0.10.0
 
 Milestone 6 removed one adoption obstacle and revealed the next. A repository
 can now silence the findings it starts with, but `docsentry init` writes only a
