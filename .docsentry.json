@@ -57,6 +57,9 @@
         "*.json",
         "*.yml",
         "*.md"
+      ],
+      "exclude": [
+        ".docsentry-baseline.json"
       ]
     }
   ],
@@ -78,6 +81,24 @@
       "fenceLabel": "source-layout",
       "root": "src",
       "mode": "exact"
+    }
+  ],
+  "enumerations": [
+    {
+      "documents": [
+        "SPEC.md"
+      ],
+      "label": "rule identifier",
+      "values": {
+        "sources": [
+          "src/core/rules/*.ts"
+        ],
+        "pattern": "\"(DOC_[A-Z_]+)\""
+      },
+      "documented": {
+        "pattern": "DOC_[A-Z_]+",
+        "section": "Rule identifiers"
+      }
     }
   ]
 }

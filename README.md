@@ -56,7 +56,7 @@ node dist/cli/index.js check --format sarif > docsentry.sarif
 npm run tag:next  # preview the next release tag with Tagsmith
 ```
 
-The current implementation supports `init`, `check`, and `inspect`, along with
+The current implementation supports `init`, `check`, `baseline`, and `inspect`, along with
 local-link, package-script, structured-example, Action-input, and paired-document
 checks. To limit a review to a pull request's affected documentation, use
 `docsentry check --changed origin/main`; Docsentry compares the Git merge base
@@ -140,9 +140,11 @@ code spans are paths:
 
 Only inline code matching `include` is checked, and each candidate resolves
 against the repository root rather than against the document. Text containing
-whitespace, glob metacharacters, or a bare file extension stays prose, so
-`npm run build`, `docs/**/*.md`, and `.md` are never treated as paths. A
-missing target reports `DOC_PATH_MISSING` at the code span.
+whitespace, glob metacharacters, angle-bracket placeholders, or a bare file
+extension stays prose, so `npm run build`, `docs/**/*.md`,
+`src/models/<name>.ts`, and `.md` are never treated as paths. A missing target
+reports `DOC_PATH_MISSING` at the code span. Add `exclude` for a filename the
+documentation names as a convention rather than a committed file.
 
 An architecture document that draws its source layout can have that tree
 compared with the repository:
@@ -167,6 +169,54 @@ documented path that no longer exists. `exact` also reports
 listed without children covers everything beneath it, and `ignore` excludes
 generated files. A line the parser cannot place reports `DOC_TREE_UNPARSED` as
 a warning instead of being dropped.
+
+A document that lists a closed set — rule identifiers, error codes, supported
+values — can be compared with the code that defines it:
+
+```json
+{
+  "enumerations": [
+    {
+      "documents": ["SPEC.md"],
+      "label": "rule identifier",
+      "values": { "sources": ["src/core/rules/*.ts"], "pattern": "\"(DOC_[A-Z_]+)\"" },
+      "documented": { "pattern": "DOC_[A-Z_]+", "section": "Rule identifiers" }
+    }
+  ]
+}
+```
+
+The documented set is every inline code span matching `documented.pattern` in
+full, optionally limited to one section. The defined set is every match of
+`values.pattern` in the selected files. A value missing from the document
+reports `DOC_ENUM_UNDOCUMENTED`; a documented value the code does not define
+reports `DOC_ENUM_UNKNOWN` at its code span.
+
+Collection is textual: Docsentry does not parse the source language, so a
+value in a comment still counts. Docsentry uses this contract on its own rule
+identifier table in [SPEC.md](SPEC.md).
+
+## Baseline
+
+A repository whose documentation has already drifted does not have to fix
+everything before enabling Docsentry. Record the current findings once, then
+check against that record:
+
+```bash
+docsentry baseline   # writes .docsentry-baseline.json
+docsentry check      # applies it automatically; reports only new findings
+```
+
+`check` applies `.docsentry-baseline.json` when it exists, the same way it
+reads `.docsentry.json`. Use `--baseline <path>` for a different location and
+`--no-baseline` to see every finding again.
+
+A baseline stores a count per document and rule identifier, so it survives
+edits that move a line and message wording that changes between releases. A
+suppressed finding does not affect the exit status, and the summary reports how
+many were suppressed. When entries stop matching, the report says so and
+recommends re-running `docsentry baseline`; nothing is rewritten during a
+check.
 
 ## GitHub Actions
 

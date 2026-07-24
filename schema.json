@@ -53,6 +53,12 @@
       "items": {
         "$ref": "#/$defs/directoryTree"
       }
+    },
+    "enumerations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/enumeration"
+      }
     }
   },
   "$defs": {
@@ -186,6 +192,54 @@
         "include": {
           "$ref": "#/$defs/documentPatterns",
           "description": "Repository-relative glob patterns selecting which inline code spans are treated as paths."
+        },
+        "exclude": {
+          "$ref": "#/$defs/documentPatterns",
+          "description": "Glob patterns removed from the selection, for filenames a document names as a convention rather than a file."
+        }
+      }
+    },
+    "enumeration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["documents", "label", "values", "documented"],
+      "properties": {
+        "documents": {
+          "$ref": "#/$defs/documentPatterns"
+        },
+        "label": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Name of the enumerated thing, used in finding messages."
+        },
+        "values": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sources", "pattern"],
+          "properties": {
+            "sources": {
+              "$ref": "#/$defs/documentPatterns",
+              "description": "Glob patterns selecting the files that define the values."
+            },
+            "pattern": {
+              "$ref": "#/$defs/nonEmptyString",
+              "description": "Regular expression matched against source text; its first capture group, or the whole match, is the value."
+            }
+          }
+        },
+        "documented": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pattern"],
+          "properties": {
+            "pattern": {
+              "$ref": "#/$defs/nonEmptyString",
+              "description": "Regular expression an inline code span must match in full to count as a documented value."
+            },
+            "section": {
+              "$ref": "#/$defs/nonEmptyString",
+              "description": "Heading text limiting the documented values to one section."
+            }
+          }
         }
       }
     },

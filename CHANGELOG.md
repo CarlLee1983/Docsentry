@@ -3,6 +3,34 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## Unreleased
+
+### Added
+
+- `docsentry baseline` records current findings as suppression counts, and
+  `check` reports only findings beyond them. This lets a repository adopt
+  Docsentry incrementally without weakening a contract. `check` discovers
+  `.docsentry-baseline.json` the way it discovers `.docsentry.json`;
+  `--baseline <path>` selects another file and `--no-baseline` ignores one.
+- Terminal and JSON reports carry a `suppressed` count when a baseline is
+  applied, and the terminal report names how many baseline entries no longer
+  match.
+
+- An enumeration contract. `enumerations` compares a documented list of values
+  with literals collected from selected source files, reporting
+  `DOC_ENUM_UNDOCUMENTED`, `DOC_ENUM_UNKNOWN`, `DOC_ENUM_SOURCE_UNAVAILABLE`,
+  and `DOC_ENUM_SECTION_MISSING`. Docsentry applies it to its own rule
+  identifier table, which was previously kept in step by hand.
+- `pathReferences[].exclude` removes paths from a selection, for a filename
+  documentation names as a convention rather than a committed file.
+
+### Fixed
+
+- Path references no longer treat an angle-bracket placeholder such as
+  `src/core/models/<name>.ts` as a repository path. Found while adopting the
+  contract in the sibling Tagsmith repository, whose contributor guide
+  documents a template rather than a file.
+
 ## v0.6.0 — 2026-07-24
 
 ### Added
