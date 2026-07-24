@@ -99,6 +99,23 @@ describe("path reference contract", () => {
     });
   });
 
+  it("removes an excluded path from the selection", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          pathReferences: [
+            { documents: ["README.md"], include: ["*.json"], exclude: [".docsentry-baseline.json"] },
+          ],
+        }),
+        "README.md": "Run baseline to write `.docsentry-baseline.json`, then edit `.absent.json`.\n",
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).resolves.toMatchObject({
+      findings: [{ rule: "DOC_PATH_MISSING", message: expect.stringContaining(".absent.json") }],
+    });
+  });
+
   it("ignores an angle-bracket placeholder template", async () => {
     const engine = new DocsentryVerificationEngine(
       new MemoryRepositoryReader({

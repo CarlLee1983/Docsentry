@@ -26,7 +26,7 @@ describe("docsentry CLI", () => {
       }),
     ).toBe(0);
     expect(output.join("")).toBe(
-      "Usage: docsentry <command> [options]\n\nCommands:\n  init                 Create a starter .docsentry.json configuration.\n  check [paths...]     Verify documentation contracts.\n  inspect <document>   Print extracted document facts.\n\nRun docsentry help <command> for command-specific options.\n",
+      "Usage: docsentry <command> [options]\n\nCommands:\n  init                 Create a starter .docsentry.json configuration.\n  check [paths...]     Verify documentation contracts.\n  baseline             Record current findings so only new ones fail.\n  inspect <document>   Print extracted document facts.\n\nRun docsentry help <command> for command-specific options.\n",
     );
 
     output.splice(0);
@@ -164,6 +164,151 @@ describe("docsentry CLI", () => {
       }),
     ).toBe(2);
     expect(errors.join("")).toContain("--changed cannot be combined with explicit document paths");
+  });
+});
+
+describe("docsentry baseline", () => {
+  it("records current findings so a later check reports only new ones", async () => {
+    const root = await fixture({ "README.md": "[Missing](missing.md)\n" });
+    const output: string[] = [];
+    const io = { stdout: (message: string) => output.push(message), stderr: () => undefined };
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(await main(["baseline"], io)).toBe(0);
+      expect(output.join("")).toBe("Recorded 1 suppression(s) in .docsentry-baseline.json\n");
+      expect(JSON.parse(await readFixture(root, ".docsentry-baseline.json"))).toEqual({
+        version: 1,
+        suppressions: { "README.md": { DOC_LINK_MISSING: ['Target "missing.md" does not exist.'] } },
+      });
+
+      output.splice(0);
+      expect(await main(["check"], io)).toBe(0);
+      expect(output.join("")).toBe("0 error(s), 0 warning(s), 1 suppressed by baseline\n");
+
+      await writeFile(path.join(root, "README.md"), "[Missing](missing.md)\n[Also missing](gone.md)\n", "utf8");
+      output.splice(0);
+      expect(await main(["check"], io)).toBe(1);
+      expect(output.join("")).toContain("README.md:2:1  ERROR  DOC_LINK_MISSING");
+      expect(output.join("")).toContain("1 error(s), 0 warning(s), 1 suppressed by baseline");
+
+      output.splice(0);
+      expect(await main(["check", "--no-baseline"], io)).toBe(1);
+      expect(output.join("")).toContain("2 error(s), 0 warning(s)\n");
+      expect(output.join("")).not.toContain("suppressed");
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("reports suppressions that no longer match and keeps them out of JSON findings", async () => {
+    const root = await fixture({ "README.md": "[Missing](missing.md)\n" });
+    const output: string[] = [];
+    const io = { stdout: (message: string) => output.push(message), stderr: () => undefined };
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      await main(["baseline"], io);
+      await writeFile(path.join(root, "README.md"), "# Fixed\n", "utf8");
+
+      output.splice(0);
+      expect(await main(["check", "--baseline", ".docsentry-baseline.json"], io)).toBe(0);
+      expect(output.join("")).toContain("1 baseline suppression(s) no longer match");
+
+      output.splice(0);
+      expect(await main(["check", "--baseline", ".docsentry-baseline.json", "--format", "json"], io)).toBe(0);
+      expect(JSON.parse(output.join(""))).toEqual({
+        findings: [],
+        summary: { errors: 0, warnings: 0, suppressed: 0 },
+      });
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("reports a missing explicit baseline path", async () => {
+    const root = await fixture({ "README.md": "# Docsentry\n" });
+    const errors: string[] = [];
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(
+        await main(["check", "--baseline", "absent-baseline.json"], {
+          stdout: () => undefined,
+          stderr: (message) => errors.push(message),
+        }),
+      ).toBe(2);
+      expect(errors.join("")).toContain("Baseline file does not exist: absent-baseline.json");
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("rejects a malformed baseline as an invocation error", async () => {
+    const root = await fixture({
+      "README.md": "# Docsentry\n",
+      "broken-baseline.json": "{ invalid",
+    });
+    const errors: string[] = [];
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(
+        await main(["check", "--baseline", "broken-baseline.json"], {
+          stdout: () => undefined,
+          stderr: (message) => errors.push(message),
+        }),
+      ).toBe(2);
+      expect(errors.join("")).toContain("Cannot parse baseline broken-baseline.json");
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("writes a baseline to a configured output path", async () => {
+    const root = await fixture({
+      "README.md": "[Missing](missing.md)\n",
+      "docs/guide.md": "[Also missing](gone.md)\n",
+    });
+    const output: string[] = [];
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(
+        await main(["baseline", "--output", "docs/baseline.json"], {
+          stdout: (message) => output.push(message),
+          stderr: () => undefined,
+        }),
+      ).toBe(0);
+      expect(output.join("")).toBe("Recorded 2 suppression(s) in docs/baseline.json\n");
+      expect(JSON.parse(await readFixture(root, "docs/baseline.json"))).toEqual({
+        version: 1,
+        suppressions: {
+          "README.md": { DOC_LINK_MISSING: ['Target "missing.md" does not exist.'] },
+          "docs/guide.md": { DOC_LINK_MISSING: ['Target "gone.md" does not exist.'] },
+        },
+      });
+    } finally {
+      process.chdir(originalDirectory);
+    }
+  });
+
+  it("refuses a baseline path outside the repository", async () => {
+    const root = await fixture({ "README.md": "# Docsentry\n" });
+    const errors: string[] = [];
+    const originalDirectory = process.cwd();
+    process.chdir(root);
+    try {
+      expect(
+        await main(["baseline", "--output", "../escaped.json"], {
+          stdout: () => undefined,
+          stderr: (message) => errors.push(message),
+        }),
+      ).toBe(2);
+      expect(errors.join("")).toContain("Path must stay inside the repository");
+    } finally {
+      process.chdir(originalDirectory);
+    }
   });
 });
 

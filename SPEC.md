@@ -51,6 +51,8 @@ language true.
   listing.
 - Declared ASCII directory trees, compared against the repository in a
   documented-paths-exist or exact mode.
+- Declared enumerations, compared against literal values collected from
+  selected source files.
 - Terminal, JSON, and SARIF 2.1.0 reports with non-zero exit status when error
   findings exist.
 
@@ -203,6 +205,13 @@ Existence is evaluated against the repository file listing, which excludes
 build output and dependency directories. A document that names a generated
 path should not select it through `include`.
 
+`exclude` removes paths from that selection. It exists for a filename a
+document names as a convention rather than as a file it claims to contain —
+`.docsentry-baseline.json`, for example, is written by a command rather than
+committed. Prefer a narrower `include` where one is available; `exclude` is
+for the case where the same pattern must both cover real files and skip a
+named convention.
+
 ### Directory tree contract
 
 An architecture document often draws the source layout as an ASCII tree, which
@@ -225,6 +234,34 @@ may restate. Two comparison modes are available:
   file below `root` that the tree omits. A directory listed without children
   covers every file beneath it, so a tree can summarise a subtree instead of
   enumerating it, and `ignore` patterns exclude generated files.
+
+### Enumeration contract
+
+A document that lists a closed set — rule identifiers, error codes, supported
+option values — restates something the code already knows. An enumeration
+contract compares the two sets and reports each difference:
+
+- `DOC_ENUM_UNDOCUMENTED` for a value the sources define that the document does
+  not list, located at the document's start and evidenced by the file that
+  states it.
+- `DOC_ENUM_UNKNOWN` for a documented value the sources do not define, located
+  at its code span.
+- `DOC_ENUM_SOURCE_UNAVAILABLE` when no file matches `values.sources`, because
+  an empty evidence set would otherwise report every documented value as
+  unknown.
+- `DOC_ENUM_SECTION_MISSING` when a configured `documented.section` heading
+  does not exist.
+
+The documented set is every inline code span that matches `documented.pattern`
+in full, optionally limited to one section by heading text. The defined set is
+every match of `values.pattern` in the selected source files, using its first
+capture group when it has one.
+
+Value collection is textual on purpose. Docsentry does not parse the source
+language, so a value inside a comment or an unreachable branch still counts,
+and a pattern narrower than the code's actual spelling reports its own mismatch
+rather than failing silently. This keeps the contract deterministic and
+language-independent; it is a list comparison, not source-code analysis.
 
 ## Configuration
 
@@ -291,6 +328,14 @@ schema, Action, package-identity, and document-pair contracts.
       "mode": "exact",
       "ignore": ["**/*.generated.ts"]
     }
+  ],
+  "enumerations": [
+    {
+      "documents": ["SPEC.md"],
+      "label": "rule identifier",
+      "values": { "sources": ["src/core/rules/*.ts"], "pattern": "\"(DOC_[A-Z_]+)\"" },
+      "documented": { "pattern": "DOC_[A-Z_]+", "section": "Rule identifiers" }
+    }
   ]
 }
 ```
@@ -327,6 +372,8 @@ docsentry check [paths...]
 docsentry check --config .docsentry.json --format json
 docsentry check --format sarif
 docsentry check --changed origin/main
+docsentry baseline
+docsentry check --no-baseline
 docsentry inspect README.md
 ```
 
@@ -338,6 +385,46 @@ passing judgment.
 `docsentry --help` and `docsentry help <command>` return usage text with status
 zero and do not read repository files. The `--help` and `-h` aliases are also
 accepted immediately after each command.
+
+## Baseline
+
+A repository that adopts Docsentry after its documentation has already drifted
+faces every existing finding at once. `docsentry baseline` records the current
+findings so that a later `check` reports only new ones. This makes adoption
+incremental without weakening any contract.
+
+`check` applies `.docsentry-baseline.json` when that file exists, mirroring how
+`.docsentry.json` is discovered. `--baseline <path>` selects another location
+and is an invocation error when that file is absent; `--no-baseline` reports
+every finding.
+
+A baseline is a count per document and rule identifier:
+
+```json
+{
+  "version": 1,
+  "suppressions": {
+    "README.md": { "DOC_LINK_MISSING": 2, "DOC_PATH_MISSING": 1 }
+  }
+}
+```
+
+Counts are deliberately coarser than individual findings. Rule identifiers are
+already a compatibility surface, while messages and line numbers are not, so a
+baseline keyed on them would break whenever wording changed or a document was
+edited above an existing problem. The cost is that fixing one finding and
+introducing another of the same rule in the same document is not reported.
+
+Suppression is deterministic: findings are ordered before the baseline is
+applied, so the same repository state always suppresses the same findings.
+A suppressed finding does not affect the exit status. When a baseline entry no
+longer matches any finding, the terminal report says how many are stale and
+recommends re-recording; the entry is not removed automatically, because
+rewriting a committed file during a check would surprise CI.
+
+`check --baseline` reports `summary.suppressed` in terminal and JSON output.
+The SARIF report is unchanged; a code-scanning consumer receives only the
+findings that survive suppression.
 
 `--changed <base>` is an opt-in focused-review mode. It obtains local paths
 from `git diff <base>...HEAD`, including deletions, and cannot be combined with
@@ -364,7 +451,8 @@ type Finding = {
 ```
 
 JSON output must contain a `findings` array and a summary of error and warning
-counts. Rule identifiers are a compatibility surface once released.
+counts. When a baseline is applied, the summary also carries `suppressed`.
+Rule identifiers are a compatibility surface once released.
 
 `--format sarif` emits a SARIF 2.1.0 log. Each Finding becomes one result with
 its rule ID, severity, message, and repository-relative document location.
@@ -385,6 +473,7 @@ JSON interfaces.
 | Version references | `DOC_VERSION_STALE`, `DOC_VERSION_REFERENCE_MISSING`, `DOC_VERSION_EVIDENCE_UNAVAILABLE` |
 | Path references | `DOC_PATH_MISSING` |
 | Directory trees | `DOC_TREE_PATH_MISSING`, `DOC_TREE_PATH_UNDOCUMENTED`, `DOC_TREE_UNPARSED` |
+| Enumerations | `DOC_ENUM_UNDOCUMENTED`, `DOC_ENUM_UNKNOWN`, `DOC_ENUM_SOURCE_UNAVAILABLE`, `DOC_ENUM_SECTION_MISSING` |
 
 ## Acceptance criteria for the first usable release
 

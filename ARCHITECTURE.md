@@ -49,6 +49,9 @@ AST details or evidence-loading order.
   rather than the filesystem, so both adapters agree on whether a directory
   reference resolves and ignored build output is never treated as evidence.
 - Invalid Docsentry configuration is an invocation error, not a Finding.
+- Baseline suppression happens outside the engine, on an already-ordered
+  report, so a contract never learns that a finding is suppressed and the
+  engine stays deterministic.
 - The packaged JSON Schema and runtime validator accept the same configuration
   properties; unknown properties are invocation errors.
 - A malformed individual document is reported as a Finding whenever a useful
@@ -77,8 +80,8 @@ package.
 | Verification engine | Turn one request into one report | Orchestration, rule selection, normalization, ordering |
 | Repository reader | Read files and list paths beneath one root | Node filesystem access; an in-memory adapter for tests |
 | Document parser | Produce headings, links, commands, fenced blocks, code spans, and directory trees with locations | Markdown AST parsing, ASCII tree parsing, and source-position recovery |
-| Evidence collector | Produce package, schema, and Action facts | Parse `package.json`, JSON Schema, Action metadata, and source-located workflow YAML mappings |
-| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, pair, version-reference, path-reference, and directory-tree comparisons |
+| Evidence collector | Produce package, schema, Action, and literal facts | Parse `package.json`, JSON Schema, Action metadata, source-located workflow YAML mappings, and pattern-matched literals from selected source files |
+| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, pair, version-reference, path-reference, directory-tree, and enumeration comparisons |
 | Reporter | Render an already-complete report | Terminal, JSON, and SARIF 2.1.0 formatting |
 
 The Repository reader has a real seam because production code needs a Node
@@ -98,6 +101,7 @@ src/
     finding.ts          # report model and deterministic ordering
     config.ts           # config parsing and validation
     errors.ts           # invocation and repository path errors
+    baseline.ts         # suppression snapshot model
     rules/              # sealed registry; pure rule logic where possible
       link.ts
       package.ts
@@ -107,6 +111,7 @@ src/
       version.ts
       path.ts
       tree.ts
+      enumeration.ts
   repository/
     reader.ts           # Repository reader Interface
     node-reader.ts      # production Adapter
@@ -121,10 +126,12 @@ src/
     package.ts
     structured.ts       # JSON Schema and YAML example evidence
     github-action.ts
+    literals.ts         # textual literal collection from source files
   cli/
     index.ts
     init.ts
     inspect.ts
+    baseline.ts         # baseline snapshot read and write
     changed-files.ts    # opt-in Git change detection
   reporters/
     terminal.ts

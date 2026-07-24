@@ -2,6 +2,7 @@ import { loadConfig, matchesPatterns, type DocsentryConfig } from "./config.js";
 import { createReport, type VerificationReport } from "./finding.js";
 import { validateActionExamples } from "./rules/action.js";
 import { validateLinks } from "./rules/link.js";
+import { validateEnumerations } from "./rules/enumeration.js";
 import { validateDocumentPairs } from "./rules/pair.js";
 import { validatePackageContracts } from "./rules/package.js";
 import { selectedPath, validatePathReferences } from "./rules/path.js";
@@ -51,14 +52,22 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     };
 
     const scopedConfig = request.changedPaths ? configForDocuments(config, documents) : config;
-    const [linkFindings, packageFindings, structuredFindings, actionFindings, pairFindings, versionFindings] =
-      await Promise.all([
+    const [
+      linkFindings,
+      packageFindings,
+      structuredFindings,
+      actionFindings,
+      pairFindings,
+      versionFindings,
+      enumerationFindings,
+    ] = await Promise.all([
         validateLinks(documents, this.reader, loadDocument),
         validatePackageContracts(documents, scopedConfig, this.reader, loadDocument),
         validateStructuredExamples(documents, scopedConfig, this.reader),
         validateActionExamples(documents, scopedConfig, this.reader),
         validateDocumentPairs(scopedConfig, loadDocument),
         validateVersionReferences(documents, scopedConfig, this.reader),
+        validateEnumerations(documents, scopedConfig, this.reader, files),
       ]);
     return createReport([
       ...linkFindings,
@@ -67,6 +76,7 @@ export class DocsentryVerificationEngine implements VerificationEngine {
       ...actionFindings,
       ...pairFindings,
       ...versionFindings,
+      ...enumerationFindings,
       ...validatePathReferences(documents, scopedConfig, files),
       ...validateDirectoryTrees(documents, scopedConfig, files),
     ]);
@@ -102,6 +112,9 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     }
     for (const tree of config.directoryTrees ?? []) {
       addMatches(selected, markdownFiles, tree.documents);
+    }
+    for (const enumeration of config.enumerations ?? []) {
+      addMatches(selected, markdownFiles, enumeration.documents);
     }
     for (const assertion of config.package?.assertions ?? []) {
       addIfExistingMarkdown(selected, markdownFiles, assertion.document);
@@ -150,6 +163,11 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     for (const tree of config.directoryTrees ?? []) {
       if ([...changed].some((changedPath) => isUnderRoot(changedPath, tree.root))) {
         selectMatching(tree.documents);
+      }
+    }
+    for (const enumeration of config.enumerations ?? []) {
+      if ([...changed].some((changedPath) => matchesPatterns(changedPath, enumeration.values.sources))) {
+        selectMatching(enumeration.documents);
       }
     }
     for (const pair of config.documentPairs ?? []) {
@@ -222,6 +240,9 @@ function configForDocuments(config: DocsentryConfig, documents: readonly Documen
     ),
     directoryTrees: config.directoryTrees?.filter((tree) =>
       documents.some((document) => matchesPatterns(document.path, tree.documents)),
+    ),
+    enumerations: config.enumerations?.filter((enumeration) =>
+      documents.some((document) => matchesPatterns(document.path, enumeration.documents)),
     ),
   };
 }
