@@ -53,8 +53,8 @@ language true.
   documented-paths-exist or exact mode.
 - Declared enumerations, compared against literal values collected from
   selected source files.
-- Terminal, JSON, and SARIF 2.1.0 reports with non-zero exit status when error
-  findings exist.
+- Terminal, JSON, SARIF 2.1.0, and GitHub annotation reports with non-zero
+  exit status when error findings exist.
 
 ### Explicit non-goals for version 0.1
 
@@ -382,6 +382,7 @@ docsentry init
 docsentry check [paths...]
 docsentry check --config .docsentry.json --format json
 docsentry check --format sarif
+docsentry check --format github
 docsentry check --changed origin/main
 docsentry baseline
 docsentry check --no-baseline
@@ -471,6 +472,17 @@ When present, evidence is rendered as a related location and the suggested
 remediation is retained in the result properties. This lets code-scanning
 consumers surface Docsentry diagnostics without losing the normal terminal or
 JSON interfaces.
+
+`--format github` emits one GitHub Actions workflow command per Finding, which
+the runner renders as an inline pull request annotation at the Finding's line
+and column. Evidence and remediation are appended to the annotation body, and
+characters that would terminate a command are percent-escaped.
+
+This is a reporter, not an integration: Docsentry writes the commands to
+standard output and never calls the GitHub API, so annotation support requires
+no token and keeps the check deterministic and offline. GitHub limits how many
+annotations it displays per job, so the summary line remains the authoritative
+count.
 
 ### Rule identifiers
 

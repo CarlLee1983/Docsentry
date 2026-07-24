@@ -71,6 +71,17 @@ Use `--format sarif` to emit a SARIF 2.1.0 report for a code-scanning
 consumer. Paths in the report are repository-relative and source-located; the
 command keeps the normal non-zero exit status when it reports errors.
 
+Use `--format github` in a GitHub Actions job to place each finding as an
+inline annotation on the pull request:
+
+```text
+::error file=README.md,line=12,col=3,title=DOC_SCRIPT_UNKNOWN::Documented script "verify" does not exist.
+```
+
+The runner turns these workflow commands into annotations, so Docsentry needs
+no token and makes no API call. GitHub displays at most ten annotations per
+level per job; the summary line always reports the full counts.
+
 ## Configuration
 
 `docsentry init` creates a minimal `.docsentry.json`. The installed package

@@ -3,6 +3,17 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## Unreleased
+
+### Added
+
+- `docsentry check --format github` emits GitHub Actions workflow commands, so
+  a pull request shows each finding as an inline annotation at its line and
+  column. It writes to standard output and calls no API, so it needs no token
+  and the check stays deterministic and offline.
+- The composite Action accepts `format: github`, and this repository's own CI
+  uses it.
+
 ## v0.8.0 — 2026-07-24
 
 ### Added

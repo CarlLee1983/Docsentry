@@ -82,7 +82,7 @@ package.
 | Document parser | Produce headings, links, commands, fenced blocks, code spans, and directory trees with locations | Markdown AST parsing, ASCII tree parsing, and source-position recovery |
 | Evidence collector | Produce package, schema, Action, and literal facts | Parse `package.json`, JSON Schema, Action metadata, source-located workflow YAML mappings, and pattern-matched literals from selected source files |
 | Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, pair, version-reference, path-reference, directory-tree, and enumeration comparisons |
-| Reporter | Render an already-complete report | Terminal, JSON, and SARIF 2.1.0 formatting |
+| Reporter | Render an already-complete report | Terminal, JSON, SARIF 2.1.0, and GitHub workflow-command formatting |
 
 The Repository reader has a real seam because production code needs a Node
 filesystem adapter while unit tests need an in-memory fixture adapter. The
@@ -137,6 +137,7 @@ src/
     terminal.ts
     json.ts
     sarif.ts
+    github.ts           # GitHub Actions workflow-command annotations
 ```
 
 ## Test strategy
@@ -156,4 +157,6 @@ src/
   fenced blocks.
 - JSON Schema validation uses Ajv; YAML parsing uses `yaml` with safe,
   non-executing parsing.
-- GitHub PR annotations may be added after the SARIF report is stable.
+- GitHub PR annotations are delivered as a reporter that writes workflow
+  commands, rather than as a Checks API integration, so the check needs no
+  token and performs no network I/O.

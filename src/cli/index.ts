@@ -10,6 +10,7 @@ import { resolveBaseline, writeBaseline } from "./baseline.js";
 import { changedFiles } from "./changed-files.js";
 import { inspectDocument } from "./inspect.js";
 import { initialize } from "./init.js";
+import { renderGithub } from "../reporters/github.js";
 import { renderJson } from "../reporters/json.js";
 import { renderSarif } from "../reporters/sarif.js";
 import { renderTerminal } from "../reporters/terminal.js";
@@ -129,7 +130,7 @@ function renderHelp(command?: string): string {
       "  --no-baseline     Report every finding, ignoring an existing baseline file.",
       "  --changed <base>  Check documents affected since the Git merge base; cannot be combined with paths.",
       "  --config <path>   Read configuration from a path other than .docsentry.json.",
-      "  --format <format> Render terminal (default), json, or sarif output.",
+      "  --format <format> Render terminal (default), json, sarif, or github output.",
       "",
     ].join("\n");
   }
@@ -141,7 +142,7 @@ type CheckOptions = {
   changedBase?: string;
   baselinePath?: string;
   noBaseline?: boolean;
-  format: "terminal" | "json" | "sarif";
+  format: "terminal" | "json" | "sarif" | "github";
   documents: string[];
 };
 
@@ -189,8 +190,8 @@ function checkOptions(arguments_: readonly string[]): CheckOptions {
       result.noBaseline = true;
     } else if (argument === "--format") {
       const format = arguments_[index + 1];
-      if (format !== "json" && format !== "sarif" && format !== "terminal") {
-        throw new InvocationError("--format must be json, sarif, or terminal");
+      if (format !== "json" && format !== "sarif" && format !== "terminal" && format !== "github") {
+        throw new InvocationError("--format must be json, sarif, github, or terminal");
       }
       result.format = format;
       index += 1;
@@ -216,6 +217,7 @@ function renderReport(
 ): string {
   if (format === "json") return renderJson(report);
   if (format === "sarif") return renderSarif(report);
+  if (format === "github") return renderGithub(report, stale);
   return renderTerminal(report, stale);
 }
 
