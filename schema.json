@@ -41,6 +41,12 @@
       "items": {
         "$ref": "#/$defs/versionReference"
       }
+    },
+    "pathReferences": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pathReference"
+      }
     }
   },
   "$defs": {
@@ -160,6 +166,20 @@
           "type": "boolean",
           "default": false,
           "description": "Report a finding when a selected document never states the pattern."
+        }
+      }
+    },
+    "pathReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["documents", "include"],
+      "properties": {
+        "documents": {
+          "$ref": "#/$defs/documentPatterns"
+        },
+        "include": {
+          "$ref": "#/$defs/documentPatterns",
+          "description": "Repository-relative glob patterns selecting which inline code spans are treated as paths."
         }
       }
     },

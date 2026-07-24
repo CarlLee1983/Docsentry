@@ -4,6 +4,7 @@ import { validateActionExamples } from "./rules/action.js";
 import { validateLinks } from "./rules/link.js";
 import { validateDocumentPairs } from "./rules/pair.js";
 import { validatePackageContracts } from "./rules/package.js";
+import { selectedPath, validatePathReferences } from "./rules/path.js";
 import { validateStructuredExamples } from "./rules/structured.js";
 import { validateVersionReferences } from "./rules/version.js";
 import { parseMarkdown, type DocumentFact } from "../documents/markdown.js";
@@ -28,14 +29,15 @@ export class DocsentryVerificationEngine implements VerificationEngine {
 
   async verify(request: VerificationRequest): Promise<VerificationReport> {
     const config = await loadConfig(this.reader, request.configPath);
+    const files = await this.reader.listFiles();
     const documents = request.changedPaths
       ? this.selectChangedDocuments(
-        await this.loadSelectedDocuments(undefined, config),
+        await this.loadSelectedDocuments(undefined, config, files),
         config,
         request.changedPaths,
         request.configPath ?? ".docsentry.json",
       )
-      : await this.loadSelectedDocuments(request.documents, config);
+      : await this.loadSelectedDocuments(request.documents, config, files);
     const cache = new Map(documents.map((document) => [document.path, document]));
     const loadDocument = async (filePath: string): Promise<DocumentFact> => {
       const normalized = normalizeRepositoryPath(filePath);
@@ -64,14 +66,15 @@ export class DocsentryVerificationEngine implements VerificationEngine {
       ...actionFindings,
       ...pairFindings,
       ...versionFindings,
+      ...validatePathReferences(documents, scopedConfig, files),
     ]);
   }
 
   private async loadSelectedDocuments(
     requestedDocuments: readonly string[] | undefined,
     config: DocsentryConfig,
+    files: readonly string[],
   ): Promise<DocumentFact[]> {
-    const files = await this.reader.listFiles();
     const markdownFiles = files.filter(isMarkdown);
     const selected = new Set<string>();
     const selection = requestedDocuments ?? config.documents;
@@ -90,6 +93,9 @@ export class DocsentryVerificationEngine implements VerificationEngine {
       addIfExistingMarkdown(selected, markdownFiles, pair.mirror);
     }
     for (const reference of config.versionReferences ?? []) {
+      addMatches(selected, markdownFiles, reference.documents);
+    }
+    for (const reference of config.pathReferences ?? []) {
       addMatches(selected, markdownFiles, reference.documents);
     }
     for (const assertion of config.package?.assertions ?? []) {
@@ -146,7 +152,10 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     }
 
     for (const document of candidates) {
-      if (document.links.some((link) => linkTargetsChangedPath(document.path, link.url, changed))) {
+      if (
+        document.links.some((link) => linkTargetsChangedPath(document.path, link.url, changed)) ||
+        referencesChangedPath(document, config, changed)
+      ) {
         selected.add(document.path);
       }
     }
@@ -198,7 +207,25 @@ function configForDocuments(config: DocsentryConfig, documents: readonly Documen
     versionReferences: config.versionReferences?.filter((reference) =>
       documents.some((document) => matchesPatterns(document.path, reference.documents)),
     ),
+    pathReferences: config.pathReferences?.filter((reference) =>
+      documents.some((document) => matchesPatterns(document.path, reference.documents)),
+    ),
   };
+}
+
+function referencesChangedPath(
+  document: DocumentFact,
+  config: DocsentryConfig,
+  changedPaths: ReadonlySet<string>,
+): boolean {
+  return (config.pathReferences ?? []).some(
+    (reference) =>
+      matchesPatterns(document.path, reference.documents) &&
+      document.codeSpans.some((span) => {
+        const candidate = selectedPath(span.value, reference);
+        return candidate !== undefined && changedPaths.has(candidate);
+      }),
+  );
 }
 
 function linkTargetsChangedPath(documentPath: string, url: string, changedPaths: ReadonlySet<string>): boolean {

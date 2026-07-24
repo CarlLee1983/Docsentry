@@ -93,7 +93,7 @@ Deliverables:
 - Declared version references compared against a manifest pointer — complete
   and unreleased.
 - Declared inline path references, restricted to configured path patterns —
-  planned.
+  complete and unreleased.
 - Declared directory-tree examples compared against the repository — planned.
 
 Exit condition: a release that changes the package version, and a refactor that

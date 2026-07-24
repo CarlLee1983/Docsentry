@@ -124,6 +124,26 @@ text keeps unrelated versions — a changelog history, for example — outside t
 contract. Set `required` to report a document that never states the reference
 at all.
 
+To keep documented file paths honest through a refactor, declare which inline
+code spans are paths:
+
+```json
+{
+  "pathReferences": [
+    {
+      "documents": ["ARCHITECTURE.md", "SPEC.md"],
+      "include": ["src/**", "test/**"]
+    }
+  ]
+}
+```
+
+Only inline code matching `include` is checked, and each candidate resolves
+against the repository root rather than against the document. Text containing
+whitespace, glob metacharacters, or a bare file extension stays prose, so
+`npm run build`, `docs/**/*.md`, and `.md` are never treated as paths. A
+missing target reports `DOC_PATH_MISSING` at the code span.
+
 ## GitHub Actions
 
 The composite Action runs the Docsentry code bundled with the Action revision,

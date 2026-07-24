@@ -41,6 +41,11 @@ export type VersionReferenceConfig = {
   required?: boolean;
 };
 
+export type PathReferenceConfig = {
+  documents: readonly string[];
+  include: readonly string[];
+};
+
 export type DocsentryConfig = {
   documents?: readonly string[];
   package?: { manifest?: string; assertions?: readonly PackageAssertion[] };
@@ -48,6 +53,7 @@ export type DocsentryConfig = {
   actionExamples?: readonly ActionExampleConfig[];
   documentPairs?: readonly DocumentPairConfig[];
   versionReferences?: readonly VersionReferenceConfig[];
+  pathReferences?: readonly PathReferenceConfig[];
 };
 
 export async function loadConfig(
@@ -78,7 +84,16 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
   const value = object(input, source);
   allowOnly(
     value,
-    ["$schema", "documents", "package", "schemaExamples", "actionExamples", "documentPairs", "versionReferences"],
+    [
+      "$schema",
+      "documents",
+      "package",
+      "schemaExamples",
+      "actionExamples",
+      "documentPairs",
+      "versionReferences",
+      "pathReferences",
+    ],
     source,
   );
   optionalString(value.$schema, "$schema", source);
@@ -96,7 +111,18 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
   const versionReferences = optionalArray(value.versionReferences, "versionReferences", source)?.map((entry, index) =>
     validateVersionReference(entry, `${source}: versionReferences[${index}]`),
   );
-  return { documents, package: packageConfig, schemaExamples, actionExamples, documentPairs, versionReferences };
+  const pathReferences = optionalArray(value.pathReferences, "pathReferences", source)?.map((entry, index) =>
+    validatePathReference(entry, `${source}: pathReferences[${index}]`),
+  );
+  return {
+    documents,
+    package: packageConfig,
+    schemaExamples,
+    actionExamples,
+    documentPairs,
+    versionReferences,
+    pathReferences,
+  };
 }
 
 function validatePackage(input: unknown, source: string): DocsentryConfig["package"] {
@@ -180,6 +206,15 @@ function validateVersionReference(input: unknown, source: string): VersionRefere
     evidence,
     label: optionalString(value.label, "label", source),
     required: optionalBoolean(value.required, "required", source),
+  };
+}
+
+function validatePathReference(input: unknown, source: string): PathReferenceConfig {
+  const value = object(input, source);
+  allowOnly(value, ["documents", "include"], source);
+  return {
+    documents: requiredStrings(value.documents, "documents", source),
+    include: requiredStrings(value.include, "include", source),
   };
 }
 

@@ -87,6 +87,18 @@ describe("delivery artifacts", () => {
     expect(validate(reference({ unsupported: true }))).toBe(false);
   });
 
+  it("accepts the same path reference configuration as the runtime validator", async () => {
+    const schema = JSON.parse(await readFile(new URL("../schema.json", import.meta.url), "utf8"));
+    const validate = new Ajv({ strict: false }).compile(schema);
+
+    expect(validate({ pathReferences: [{ documents: ["README.md"], include: ["src/**"] }] })).toBe(true);
+    expect(validate({ pathReferences: [{ documents: ["README.md"] }] })).toBe(false);
+    expect(validate({ pathReferences: [{ documents: ["README.md"], include: [] }] })).toBe(false);
+    expect(
+      validate({ pathReferences: [{ documents: ["README.md"], include: ["src/**"], unsupported: true }] }),
+    ).toBe(false);
+  });
+
   it("publishes verified version tags as idempotent GitHub Releases", async () => {
     const release = YAML.parse(
       await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8"),

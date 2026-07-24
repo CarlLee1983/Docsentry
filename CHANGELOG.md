@@ -16,6 +16,15 @@ All notable Docsentry changes are recorded here. Release tags follow the
   whose manifest changed.
 - Docsentry dogfoods the contract by requiring its own README to document the
   released Action reference.
+- A path reference contract. `pathReferences` declares which inline code spans
+  are repository paths through `include` glob patterns, and reports
+  `DOC_PATH_MISSING` for a span the repository does not contain. Whitespace,
+  glob metacharacters, and bare file extensions keep prose and commands
+  outside the contract.
+- The Markdown parser now extracts inline code spans with source locations,
+  and `docsentry inspect` reports them.
+- `check --changed <base>` now selects documents that reference a changed or
+  deleted path.
 
 ## v0.5.0 — 2026-07-23
 
