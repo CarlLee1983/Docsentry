@@ -4,17 +4,21 @@ import type { DocumentFact } from "../../documents/markdown.js";
 import { normalizeRepositoryPath } from "../../repository/path.js";
 
 const GLOB_CHARACTERS = /[*?[\]{}!()]/;
+/** Angle brackets mark a documentation placeholder, such as `src/models/<name>.ts`. */
+const PLACEHOLDER_BRACKETS = /[<>]/;
 /** A leading dot with no further dot or separator names a file extension, such as `.md`. */
 const BARE_EXTENSION = /^\.[^./]*$/;
 
 /**
  * Interpret one inline code span as a repository-relative path candidate.
- * Returns undefined for prose, commands, glob patterns, bare file extensions,
- * and paths that leave the repository, so those stay outside the contract.
+ * Returns undefined for prose, commands, glob patterns, placeholder templates,
+ * bare file extensions, and paths that leave the repository, so those stay
+ * outside the contract.
  */
 export function pathCandidate(value: string): string | undefined {
   const trimmed = value.trim();
-  if (!trimmed || /\s/.test(trimmed) || GLOB_CHARACTERS.test(trimmed)) return undefined;
+  if (!trimmed || /\s/.test(trimmed)) return undefined;
+  if (GLOB_CHARACTERS.test(trimmed) || PLACEHOLDER_BRACKETS.test(trimmed)) return undefined;
   if (BARE_EXTENSION.test(trimmed)) return undefined;
   const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
   if (!withoutTrailingSlash) return undefined;

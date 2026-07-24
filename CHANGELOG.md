@@ -3,6 +3,15 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## Unreleased
+
+### Fixed
+
+- Path references no longer treat an angle-bracket placeholder such as
+  `src/core/models/<name>.ts` as a repository path. Found while adopting the
+  contract in the sibling Tagsmith repository, whose contributor guide
+  documents a template rather than a file.
+
 ## v0.6.0 — 2026-07-24
 
 ### Added

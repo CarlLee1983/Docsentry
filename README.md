@@ -140,9 +140,10 @@ code spans are paths:
 
 Only inline code matching `include` is checked, and each candidate resolves
 against the repository root rather than against the document. Text containing
-whitespace, glob metacharacters, or a bare file extension stays prose, so
-`npm run build`, `docs/**/*.md`, and `.md` are never treated as paths. A
-missing target reports `DOC_PATH_MISSING` at the code span.
+whitespace, glob metacharacters, angle-bracket placeholders, or a bare file
+extension stays prose, so `npm run build`, `docs/**/*.md`,
+`src/models/<name>.ts`, and `.md` are never treated as paths. A missing target
+reports `DOC_PATH_MISSING` at the code span.
 
 An architecture document that draws its source layout can have that tree
 compared with the repository:

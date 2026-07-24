@@ -192,8 +192,9 @@ Docsentry checks only the spans that match:
 
 Several kinds of inline code never become candidates, so ordinary prose and
 commands stay outside the contract: text containing whitespace (`npm run
-build`), text containing glob metacharacters (`docs/**/*.md`), a bare file
-extension (`.md`), and a path that leaves the checkout (`../Tagsmith/`). A
+build`), text containing glob metacharacters (`docs/**/*.md`), a placeholder
+template in angle brackets (`src/models/<name>.ts`), a bare file extension
+(`.md`), and a path that leaves the checkout (`../Tagsmith/`). A
 consequence of the extension rule is that an extensionless dotfile such as
 `.gitignore` is also excluded; the contract prefers a missed check to a false
 report.
