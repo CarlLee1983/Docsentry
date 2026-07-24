@@ -49,6 +49,10 @@ AST details or evidence-loading order.
   rather than the filesystem, so both adapters agree on whether a directory
   reference resolves and ignored build output is never treated as evidence.
 - Invalid Docsentry configuration is an invocation error, not a Finding.
+- `verify` accepts an already-validated configuration in place of a
+  configuration path, so a caller can evaluate a configuration that is not
+  committed. This is what lets a proposed contract be costed without writing a
+  file. Supplying both a configuration and a path is an invocation error.
 - Baseline suppression happens outside the engine, on an already-ordered
   report, so a contract never learns that a finding is suppressed and the
   engine stays deterministic.
@@ -73,6 +77,11 @@ The rule registry is internal in version 0.1. A plugin Interface would be a
 shallow seam before there are real independent rule implementations outside the
 package.
 
+Drafting runs beside verification rather than inside it. A detector proposes a
+contract; the engine then verifies that contract to price it. Keeping the two
+apart is what allows the checking path to remain free of inference: the engine
+never learns that a configuration was proposed rather than committed.
+
 ## Modules and seams
 
 | Module | Interface responsibility | Implementation responsibility |
@@ -82,6 +91,7 @@ package.
 | Document parser | Produce headings, links, commands, fenced blocks, code spans, and directory trees with locations | Markdown AST parsing, ASCII tree parsing, and source-position recovery |
 | Evidence collector | Produce package, schema, Action, and literal facts | Parse `package.json`, JSON Schema, Action metadata, source-located workflow YAML mappings, and pattern-matched literals from selected source files |
 | Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, pair, version-reference, path-reference, directory-tree, and enumeration comparisons |
+| Contract drafter | Turn a checkout into proposed contracts with their adoption cost | Per-contract detectors, each reusing the recognition its rule uses; costing by differential verification |
 | Reporter | Render an already-complete report | Terminal, JSON, SARIF 2.1.0, and GitHub workflow-command formatting |
 
 The Repository reader has a real seam because production code needs a Node
@@ -102,6 +112,15 @@ src/
     config.ts           # config parsing and validation
     errors.ts           # invocation and repository path errors
     baseline.ts         # suppression snapshot model
+    proposal.ts         # proposed contract model and fragment merging
+    suggest.ts          # contract drafting and adoption cost
+    proposals/          # detectors; each justified by one repository artifact
+      package.ts
+      action.ts
+      version.ts
+      structured.ts
+      pair.ts
+      path.ts
     rules/              # sealed registry; pure rule logic where possible
       link.ts
       package.ts
@@ -130,6 +149,7 @@ src/
   cli/
     index.ts
     init.ts
+    suggest.ts          # contract drafting command and its review output
     inspect.ts
     baseline.ts         # baseline snapshot read and write
     changed-files.ts    # opt-in Git change detection

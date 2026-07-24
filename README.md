@@ -84,6 +84,24 @@ level per job; the summary line always reports the full counts.
 
 ## Configuration
 
+`docsentry suggest` reads a checkout and drafts the contracts its artifacts
+support, so a first configuration does not have to be written from the
+specification. Each proposal names the artifact that justifies it and the
+findings adopting it would report today:
+
+```text
+2. documented inputs of CarlLee1983/Docsentry  [actionExamples]
+   README.md shows a workflow example using `CarlLee1983/Docsentry`, and this
+   repository defines action.yml.
+   Adopting it reports nothing against the current checkout.
+```
+
+Proposals are drafts. The command reports no findings, writes no file, and
+never rewrites an existing configuration — copy what you want to keep. In a
+repository with no configuration yet, `docsentry init --suggest` writes the
+proposals as the starter file instead. Contracts are checked only once they are
+committed.
+
 `docsentry init` creates a minimal `.docsentry.json`. The installed package
 ships `schema.json`, so editors can complete and validate the stable
 configuration keys:

@@ -1,4 +1,5 @@
 import { loadConfig, matchesPatterns, type DocsentryConfig } from "./config.js";
+import { InvocationError } from "./errors.js";
 import { createReport, type VerificationReport } from "./finding.js";
 import { validateActionExamples } from "./rules/action.js";
 import { validateLinks } from "./rules/link.js";
@@ -18,6 +19,13 @@ export type VerificationRequest = {
   root: string;
   documents?: readonly string[];
   configPath?: string;
+  /**
+   * A validated configuration to verify instead of one read from the
+   * repository. It lets a caller evaluate a configuration that is not
+   * committed, which is how a proposed contract is costed without writing a
+   * file. Supplying both this and `configPath` is an invocation error.
+   */
+  config?: DocsentryConfig;
   /** Paths selected by an opt-in trusted change detector, such as Git. */
   changedPaths?: readonly string[];
 };
@@ -30,7 +38,10 @@ export class DocsentryVerificationEngine implements VerificationEngine {
   constructor(private readonly reader: RepositoryReader) {}
 
   async verify(request: VerificationRequest): Promise<VerificationReport> {
-    const config = await loadConfig(this.reader, request.configPath);
+    if (request.config && request.configPath) {
+      throw new InvocationError("A supplied configuration cannot be combined with a configuration path");
+    }
+    const config = request.config ?? (await loadConfig(this.reader, request.configPath));
     const files = await this.reader.listFiles();
     const documents = request.changedPaths
       ? this.selectChangedDocuments(

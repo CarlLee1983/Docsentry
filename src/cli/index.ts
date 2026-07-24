@@ -10,6 +10,7 @@ import { resolveBaseline, writeBaseline } from "./baseline.js";
 import { changedFiles } from "./changed-files.js";
 import { inspectDocument } from "./inspect.js";
 import { initialize } from "./init.js";
+import { suggest } from "./suggest.js";
 import { renderGithub } from "../reporters/github.js";
 import { renderJson } from "../reporters/json.js";
 import { renderSarif } from "../reporters/sarif.js";
@@ -38,8 +39,19 @@ export async function main(
         io.stdout(renderHelp(command));
         return 0;
       }
-      if (argumentsAfterCommand.length > 0) throw new InvocationError("docsentry init accepts no arguments");
-      io.stdout(`Created ${await initialize(process.cwd())}\n`);
+      const suggested = argumentsAfterCommand.length === 1 && argumentsAfterCommand[0] === "--suggest";
+      if (argumentsAfterCommand.length > 0 && !suggested) {
+        throw new InvocationError("Usage: docsentry init [--suggest]");
+      }
+      io.stdout(`Created ${await initialize(process.cwd(), { suggest: suggested })}\n`);
+      return 0;
+    }
+    if (command === "suggest") {
+      if (isHelpRequest(argumentsAfterCommand)) {
+        io.stdout(renderHelp(command));
+        return 0;
+      }
+      io.stdout(await suggest(process.cwd(), suggestOptions(argumentsAfterCommand).configPath));
       return 0;
     }
     if (command === "inspect") {
@@ -79,7 +91,7 @@ export async function main(
       io.stdout(renderReport(options.format, report, baseline?.stale));
       return report.summary.errors > 0 ? 1 : 0;
     }
-    throw new InvocationError("Usage: docsentry <init|check|baseline|inspect> [options]");
+    throw new InvocationError("Usage: docsentry <init|suggest|check|baseline|inspect> [options]");
   } catch (error: unknown) {
     io.stderr(`docsentry: ${messageOf(error)}\n`);
     return 2;
@@ -97,6 +109,7 @@ function renderHelp(command?: string): string {
       "",
       "Commands:",
       "  init                 Create a starter .docsentry.json configuration.",
+      "  suggest              Draft the contracts this checkout supports.",
       "  check [paths...]     Verify documentation contracts.",
       "  baseline             Record current findings so only new ones fail.",
       "  inspect <document>   Print extracted document facts.",
@@ -105,7 +118,30 @@ function renderHelp(command?: string): string {
       "",
     ].join("\n");
   }
-  if (command === "init") return "Usage: docsentry init\n\nCreate a starter .docsentry.json without overwriting an existing file.\n";
+  if (command === "init") {
+    return [
+      "Usage: docsentry init [--suggest]",
+      "",
+      "Create a starter .docsentry.json without overwriting an existing file.",
+      "",
+      "Options:",
+      "  --suggest         Write the contracts this checkout supports, instead of a document selector.",
+      "",
+    ].join("\n");
+  }
+  if (command === "suggest") {
+    return [
+      "Usage: docsentry suggest [options]",
+      "",
+      "Draft the contracts this checkout supports, each with the artifact that",
+      "justifies it and the findings adopting it would report. Proposals are",
+      "printed for review; no file is written and no finding is reported.",
+      "",
+      "Options:",
+      "  --config <path>   Read an existing configuration from a path other than .docsentry.json.",
+      "",
+    ].join("\n");
+  }
   if (command === "inspect") return "Usage: docsentry inspect <document>\n\nPrint headings, links, and code blocks from one Markdown document.\n";
   if (command === "baseline") {
     return [
@@ -158,6 +194,22 @@ function baselineOptions(arguments_: readonly string[]): { configPath?: string; 
     } else if (argument === "--output") {
       if (!value) throw new InvocationError("--output requires a path");
       result.outputPath = value;
+      index += 1;
+    } else {
+      throw new InvocationError(`Unknown option: ${argument}`);
+    }
+  }
+  return result;
+}
+
+function suggestOptions(arguments_: readonly string[]): { configPath?: string } {
+  const result: { configPath?: string } = {};
+  for (let index = 0; index < arguments_.length; index += 1) {
+    const argument = arguments_[index];
+    const value = arguments_[index + 1];
+    if (argument === "--config") {
+      if (!value) throw new InvocationError("--config requires a path");
+      result.configPath = value;
       index += 1;
     } else {
       throw new InvocationError(`Unknown option: ${argument}`);

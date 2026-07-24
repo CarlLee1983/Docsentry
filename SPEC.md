@@ -379,6 +379,9 @@ The initial CLI surface stays small:
 docsentry --help
 docsentry help check
 docsentry init
+docsentry init --suggest
+docsentry suggest
+docsentry suggest --config .docsentry.json
 docsentry check [paths...]
 docsentry check --config .docsentry.json --format json
 docsentry check --format sarif
@@ -393,7 +396,7 @@ docsentry inspect README.md
 all applicable rules and returns every Finding; it must not stop at the first
 failure. `inspect` is a diagnostic command that shows the extracted links,
 commands, code blocks, code spans, and headings for one Document without
-passing judgment.
+passing judgment. `suggest` drafts contracts for review and writes nothing.
 `docsentry --help` and `docsentry help <command>` return usage text with status
 zero and do not read repository files. The `--help` and `-h` aliases are also
 accepted immediately after each command.
@@ -446,6 +449,57 @@ version-reference manifest, schema, Action definition, paired document,
 local-link target, referenced path, or file below a documented tree root. This is the only current
 mode that invokes a trusted Git command; it never executes commands extracted
 from documentation.
+
+## Contract suggestions
+
+Declaring a contract costs more than running one. A maintainer adopting
+Docsentry has to learn what can be declared before writing any of it, which is
+why a new repository tends to enable document discovery and stop there.
+
+`docsentry suggest` reads a checkout and drafts the contracts its artifacts
+support. Each proposal carries three things: what it would keep in step, the
+artifact that justifies proposing it, and the findings adopting it would report
+against the current checkout. A proposal whose reading of the evidence is wider
+than a maintainer may intend also carries a note on how to narrow it.
+
+A proposal is a draft addressed to a person:
+
+- It is never evidence and never a Finding. The command reports no findings and
+  carries no exit status of its own.
+- Nothing is checked until the fragment is committed to a configuration file.
+- An existing configuration is never rewritten. `suggest` prints what a
+  configuration lacks; `init --suggest` writes a starter configuration only
+  where none exists, keeping `init`'s refusal to overwrite.
+
+Inference is confined to this command. `check` continues to evaluate only the
+contracts a maintainer has declared.
+
+A detector recognises evidence exactly as the rule it proposes does — the same
+path-candidate test, the same document-wide search for an asserted value. A
+detector that were stricter would pass over contracts the rule would check
+happily; one that were looser would propose contracts that fail on adoption.
+
+Six contracts are proposed:
+
+| Contract | Evidence |
+| --- | --- |
+| Package assertion | A manifest value the document already states. `bin` is excluded: a pointer reaches the path a command runs, not the command's name. |
+| Action example | A workflow example whose `uses:` names this repository's own Action, matched on the final segment of the package name. |
+| Version reference | A version literal that already equals the manifest version, rewritten as a pattern. The literal text before it must contain `/` or `@`, which is what separates an install command or Action reference from a changelog heading. |
+| Schema example | Fenced JSON examples and a JSON Schema the repository ships. |
+| Document pair | A document whose filename carries a language tag, beside its untagged original. |
+| Path reference | Inline code spans that already resolve to committed files, generalised into `include` patterns. |
+
+Enumerations are not proposed. Doing so means guessing both a source pattern
+and the document section that lists the values, and a wrong guess produces a
+contract that looks authoritative while checking the wrong set. Every other
+contract is justified by an exact match against an artifact that already
+exists; an enumeration cannot be, so it stays hand-written.
+
+Adoption cost is measured by verifying the proposed contract and comparing the
+result with a configuration that declares only the document selection. The
+difference is what the maintainer would meet on the first run, including the
+indirect cost of a contract that brings another document into scope.
 
 ## Report contract
 

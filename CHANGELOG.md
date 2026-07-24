@@ -3,6 +3,28 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## Unreleased
+
+### Added
+
+- `docsentry suggest` drafts the contracts a checkout supports. Each proposal
+  names the artifact that justifies it and the findings adopting it would
+  report against the current checkout, so a maintainer decides knowing whether
+  a contract is already satisfied. Package assertions, Action examples, version
+  references, schema examples, document pairs, and path references are
+  proposed; enumerations stay hand-written, because proposing one means
+  guessing a source pattern and a document section.
+- `docsentry init --suggest` writes those proposals as the starter
+  configuration, keeping `init`'s refusal to overwrite an existing file.
+- The verification engine accepts an already-validated configuration in place
+  of a configuration path, which is how a proposal is priced without writing a
+  file.
+
+Proposals are drafts addressed to a maintainer: the command reports no finding,
+carries no exit status of its own, and never rewrites a committed
+configuration. Inference is confined to it, and `check` continues to evaluate
+only declared contracts.
+
 ## v0.9.0 — 2026-07-25
 
 ### Added
