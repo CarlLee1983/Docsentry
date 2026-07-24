@@ -1,6 +1,6 @@
 # Docsentry architecture
 
-**Status:** v0.6.0 released; milestone 5 implementation is complete
+**Status:** v0.7.0 released; milestone 6 implementation is complete
 
 ## Design decision
 

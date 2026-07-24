@@ -106,7 +106,7 @@ v0.6.0 delivery:
 Exit condition: a release that changes the package version, and a refactor that
 moves a documented file, each fail the documentation check before merge.
 
-## Milestone 6 — incremental adoption — in progress
+## Milestone 6 — incremental adoption — complete in v0.7.0
 
 A repository that adopts Docsentry after its documentation has drifted meets
 every existing finding at once, which is the main obstacle to adoption outside
@@ -115,9 +115,15 @@ this project.
 Deliverables:
 
 - `docsentry baseline` and a `check` that discovers it, matching recorded
-  messages before falling back to counts — complete and unreleased.
+  messages before falling back to counts.
 - An enumeration contract, so a documented list of values is verified against
-  the code that defines it instead of by hand — complete and unreleased.
+  the code that defines it instead of by hand.
+
+v0.7.0 delivery:
+
+- Docsentry verifies its own rule identifier table, which had been maintained
+  by hand since v0.1.0. Enabling the contract immediately reported four
+  identifiers the table was missing.
 
 Exit condition: an existing repository can enable Docsentry in CI in one
 commit, failing only on documentation that changes afterwards.
