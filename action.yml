@@ -6,7 +6,7 @@ inputs:
     required: false
     default: ''
   format:
-    description: Report format passed to docsentry check (terminal, json, or sarif).
+    description: Report format passed to docsentry check (terminal, json, sarif, or github).
     required: false
     default: terminal
   working-directory:

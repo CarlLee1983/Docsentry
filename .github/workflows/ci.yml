@@ -25,4 +25,4 @@ jobs:
         uses: ./
         with:
           config: .docsentry.json
-          format: json
+          format: github

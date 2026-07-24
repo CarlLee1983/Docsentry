@@ -36,7 +36,7 @@ describe("docsentry CLI", () => {
         stderr: () => undefined,
       }),
     ).toBe(0);
-    expect(output.join("")).toContain("--format <format> Render terminal (default), json, or sarif output.");
+    expect(output.join("")).toContain("--format <format> Render terminal (default), json, sarif, or github output.");
   });
 
   it("returns a failing status and the JSON report for a documentation finding", async () => {
