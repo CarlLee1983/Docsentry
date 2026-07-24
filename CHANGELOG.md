@@ -3,7 +3,7 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
-## Unreleased
+## v0.8.0 — 2026-07-24
 
 ### Added
 

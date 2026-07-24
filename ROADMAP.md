@@ -125,6 +125,12 @@ v0.7.0 delivery:
   by hand since v0.1.0. Enabling the contract immediately reported four
   identifiers the table was missing.
 
+v0.8.0 delivery:
+
+- Enumeration evidence accepts a JSON pointer, so a documented list can be
+  compared with one enum inside a schema rather than with every literal in a
+  file. Adopting the contract in the sibling Tagsmith repository required it.
+
 Exit condition: an existing repository can enable Docsentry in CI in one
 commit, failing only on documentation that changes afterwards.
 
