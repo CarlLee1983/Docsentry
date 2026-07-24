@@ -187,14 +187,31 @@ values — can be compared with the code that defines it:
 ```
 
 The documented set is every inline code span matching `documented.pattern` in
-full, optionally limited to one section. The defined set is every match of
-`values.pattern` in the selected files. A value missing from the document
+full, optionally limited to one section. A value missing from the document
 reports `DOC_ENUM_UNDOCUMENTED`; a documented value the code does not define
 reports `DOC_ENUM_UNKNOWN` at its code span.
 
-Collection is textual: Docsentry does not parse the source language, so a
-value in a comment still counts. Docsentry uses this contract on its own rule
-identifier table in [SPEC.md](SPEC.md).
+When the values are already published in a structured file, point at them
+instead of matching text:
+
+```json
+{
+  "enumerations": [
+    {
+      "documents": ["README.md"],
+      "label": "diagnostic code",
+      "values": { "manifest": "json-output.schema.json", "pointer": "/definitions/diagnosticCode/enum" },
+      "documented": { "pattern": "[a-z][a-z0-9-]+", "section": "Diagnostic codes" }
+    }
+  ]
+}
+```
+
+A pointer to an array contributes its items; a pointer to a mapping
+contributes its keys, which reaches an Action `inputs` block. Textual
+collection does not parse the source language, so a value in a comment still
+counts; pointer collection is exact. Docsentry uses the textual form on its own
+rule identifier table in [SPEC.md](SPEC.md).
 
 ## Baseline
 

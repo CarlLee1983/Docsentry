@@ -166,9 +166,12 @@ export class DocsentryVerificationEngine implements VerificationEngine {
       }
     }
     for (const enumeration of config.enumerations ?? []) {
-      if ([...changed].some((changedPath) => matchesPatterns(changedPath, enumeration.values.sources))) {
-        selectMatching(enumeration.documents);
-      }
+      const values = enumeration.values;
+      const evidenceChanged =
+        "manifest" in values
+          ? changed.has(normalizeRepositoryPath(values.manifest))
+          : [...changed].some((changedPath) => matchesPatterns(changedPath, values.sources));
+      if (evidenceChanged) selectMatching(enumeration.documents);
     }
     for (const pair of config.documentPairs ?? []) {
       const canonical = normalizeRepositoryPath(pair.canonical);

@@ -246,22 +246,33 @@ contract compares the two sets and reports each difference:
   states it.
 - `DOC_ENUM_UNKNOWN` for a documented value the sources do not define, located
   at its code span.
-- `DOC_ENUM_SOURCE_UNAVAILABLE` when no file matches `values.sources`, because
-  an empty evidence set would otherwise report every documented value as
-  unknown.
+- `DOC_ENUM_SOURCE_UNAVAILABLE` when the evidence yields no values — no file
+  matches `values.sources`, or `values.pointer` is absent or does not select a
+  list — because an empty evidence set would otherwise report every documented
+  value as unknown.
 - `DOC_ENUM_SECTION_MISSING` when a configured `documented.section` heading
   does not exist.
 
 The documented set is every inline code span that matches `documented.pattern`
-in full, optionally limited to one section by heading text. The defined set is
-every match of `values.pattern` in the selected source files, using its first
-capture group when it has one.
+in full, optionally limited to one section by heading text.
 
-Value collection is textual on purpose. Docsentry does not parse the source
-language, so a value inside a comment or an unreachable branch still counts,
-and a pattern narrower than the code's actual spelling reports its own mismatch
-rather than failing silently. This keeps the contract deterministic and
-language-independent; it is a list comparison, not source-code analysis.
+The defined set comes from one of two evidence forms:
+
+- `sources` and `pattern` collect every match of a regular expression across
+  the selected files, using its first capture group when it has one.
+- `manifest` and `pointer` read one structured file. A pointer to an array
+  contributes its string items; a pointer to a mapping contributes its keys.
+  This reaches a single JSON Schema `enum` or an Action `inputs` mapping
+  without also collecting every other list in the file.
+
+Declaring both forms, or neither, is an invocation error.
+
+Textual collection is deliberately unaware of the source language, so a value
+inside a comment or an unreachable branch still counts, and a pattern narrower
+than the code's actual spelling reports its own mismatch rather than failing
+silently. Pointer collection is exact instead, and is the better choice
+whenever the values are already published in a structured artifact. Either way
+the contract is a list comparison, not source-code analysis.
 
 ## Configuration
 

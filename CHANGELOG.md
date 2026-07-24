@@ -3,6 +3,16 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## Unreleased
+
+### Added
+
+- Enumeration evidence can be a JSON pointer into a structured manifest
+  (`values.manifest` and `values.pointer`) instead of a text pattern. A pointer
+  to an array contributes its items and a pointer to a mapping contributes its
+  keys, so a contract can reach one JSON Schema `enum` or an Action `inputs`
+  block without collecting every other list in the file.
+
 ## v0.7.0 — 2026-07-24
 
 ### Added

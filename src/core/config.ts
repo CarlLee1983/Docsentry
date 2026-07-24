@@ -55,10 +55,15 @@ export type DirectoryTreeConfig = {
   ignore?: readonly string[];
 };
 
+/** Enumeration evidence is either matched text or one structured pointer. */
+export type EnumerationValuesConfig =
+  | { sources: readonly string[]; pattern: string }
+  | { manifest: string; pointer: readonly string[] };
+
 export type EnumerationConfig = {
   documents: readonly string[];
   label: string;
-  values: { sources: readonly string[]; pattern: string };
+  values: EnumerationValuesConfig;
   documented: { pattern: string; section?: string };
 };
 
@@ -157,23 +162,44 @@ function validateEnumeration(input: unknown, source: string): EnumerationConfig 
   const value = object(input, source);
   allowOnly(value, ["documents", "label", "values", "documented"], source);
 
-  const values = object(value.values, `${source}: values`);
-  allowOnly(values, ["sources", "pattern"], `${source}: values`);
   const documented = object(value.documented, `${source}: documented`);
   allowOnly(documented, ["pattern", "section"], `${source}: documented`);
 
   return {
     documents: requiredStrings(value.documents, "documents", source),
     label: requiredString(value.label, "label", source),
-    values: {
-      sources: requiredStrings(values.sources, "values.sources", source),
-      pattern: requiredExpression(values.pattern, "values.pattern", source),
-    },
+    values: validateEnumerationValues(value.values, source),
     documented: {
       pattern: requiredExpression(documented.pattern, "documented.pattern", source),
       section: optionalString(documented.section, "documented.section", source),
     },
   };
+}
+
+function validateEnumerationValues(input: unknown, source: string): EnumerationValuesConfig {
+  const values = object(input, `${source}: values`);
+  allowOnly(values, ["sources", "pattern", "manifest", "pointer"], `${source}: values`);
+  const textual = values.sources !== undefined || values.pattern !== undefined;
+  const structured = values.manifest !== undefined || values.pointer !== undefined;
+  if (textual === structured) {
+    throw new InvocationError(
+      `${source}: values must declare either sources and pattern, or manifest and pointer`,
+    );
+  }
+
+  if (textual) {
+    return {
+      sources: requiredStrings(values.sources, "values.sources", source),
+      pattern: requiredExpression(values.pattern, "values.pattern", source),
+    };
+  }
+  const pointer = Array.isArray(values.pointer)
+    ? requiredStrings(values.pointer, "values.pointer", source)
+    : [requiredString(values.pointer, "values.pointer", source)];
+  if (pointer.some((entry) => !entry.startsWith("/"))) {
+    throw new InvocationError(`${source}: values.pointer must be a JSON pointer beginning with "/"`);
+  }
+  return { manifest: requiredString(values.manifest, "values.manifest", source), pointer };
 }
 
 function requiredExpression(input: unknown, field: string, source: string): string {
