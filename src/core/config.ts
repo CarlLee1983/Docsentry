@@ -46,6 +46,14 @@ export type PathReferenceConfig = {
   include: readonly string[];
 };
 
+export type DirectoryTreeConfig = {
+  documents: readonly string[];
+  fenceLabel: string;
+  root?: string;
+  mode?: "declared-exists" | "exact";
+  ignore?: readonly string[];
+};
+
 export type DocsentryConfig = {
   documents?: readonly string[];
   package?: { manifest?: string; assertions?: readonly PackageAssertion[] };
@@ -54,6 +62,7 @@ export type DocsentryConfig = {
   documentPairs?: readonly DocumentPairConfig[];
   versionReferences?: readonly VersionReferenceConfig[];
   pathReferences?: readonly PathReferenceConfig[];
+  directoryTrees?: readonly DirectoryTreeConfig[];
 };
 
 export async function loadConfig(
@@ -93,6 +102,7 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
       "documentPairs",
       "versionReferences",
       "pathReferences",
+      "directoryTrees",
     ],
     source,
   );
@@ -114,6 +124,9 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
   const pathReferences = optionalArray(value.pathReferences, "pathReferences", source)?.map((entry, index) =>
     validatePathReference(entry, `${source}: pathReferences[${index}]`),
   );
+  const directoryTrees = optionalArray(value.directoryTrees, "directoryTrees", source)?.map((entry, index) =>
+    validateDirectoryTree(entry, `${source}: directoryTrees[${index}]`),
+  );
   return {
     documents,
     package: packageConfig,
@@ -122,6 +135,7 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
     documentPairs,
     versionReferences,
     pathReferences,
+    directoryTrees,
   };
 }
 
@@ -216,6 +230,32 @@ function validatePathReference(input: unknown, source: string): PathReferenceCon
     documents: requiredStrings(value.documents, "documents", source),
     include: requiredStrings(value.include, "include", source),
   };
+}
+
+function validateDirectoryTree(input: unknown, source: string): DirectoryTreeConfig {
+  const value = object(input, source);
+  allowOnly(value, ["documents", "fenceLabel", "root", "mode", "ignore"], source);
+  const fenceLabel = requiredString(value.fenceLabel, "fenceLabel", source);
+  if (/\s/.test(fenceLabel)) throw new InvocationError(`${source}: fenceLabel must be one whitespace-free label`);
+  const mode = optionalString(value.mode, "mode", source);
+  if (mode !== undefined && mode !== "declared-exists" && mode !== "exact") {
+    throw new InvocationError(`${source}: mode supports declared-exists and exact`);
+  }
+  const root = optionalString(value.root, "root", source);
+  if (root !== undefined) normalizeRootOrThrow(root, source);
+  return {
+    documents: requiredStrings(value.documents, "documents", source),
+    fenceLabel,
+    root,
+    mode,
+    ignore: optionalStrings(value.ignore, "ignore", source),
+  };
+}
+
+function normalizeRootOrThrow(root: string, source: string): void {
+  if (root.startsWith("/") || root.endsWith("/") || root.includes("..")) {
+    throw new InvocationError(`${source}: root must be a repository-relative directory without a trailing slash`);
+  }
 }
 
 function object(input: unknown, source: string): Record<string, unknown> {

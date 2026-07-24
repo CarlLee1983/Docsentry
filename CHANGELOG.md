@@ -25,6 +25,16 @@ All notable Docsentry changes are recorded here. Release tags follow the
   and `docsentry inspect` reports them.
 - `check --changed <base>` now selects documents that reference a changed or
   deleted path.
+- A directory tree contract. `directoryTrees` compares labelled ASCII trees
+  with the repository, in `declared-exists` or `exact` mode, reporting
+  `DOC_TREE_PATH_MISSING`, `DOC_TREE_PATH_UNDOCUMENTED`, and
+  `DOC_TREE_UNPARSED`. The parser accepts indented and box-drawing trees.
+- Docsentry verifies its own `ARCHITECTURE.md` source layout in `exact` mode.
+
+### Fixed
+
+- `ARCHITECTURE.md` documented a `src/cli/check.ts` that does not exist and
+  omitted six source files; its tree now matches the checkout and is verified.
 
 ## v0.5.0 — 2026-07-23
 

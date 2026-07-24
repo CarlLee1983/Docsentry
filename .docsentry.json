@@ -69,5 +69,15 @@
       "label": "documented Action reference",
       "required": true
     }
+  ],
+  "directoryTrees": [
+    {
+      "documents": [
+        "ARCHITECTURE.md"
+      ],
+      "fenceLabel": "source-layout",
+      "root": "src",
+      "mode": "exact"
+    }
   ]
 }

@@ -94,10 +94,12 @@ Deliverables:
   and unreleased.
 - Declared inline path references, restricted to configured path patterns —
   complete and unreleased.
-- Declared directory-tree examples compared against the repository — planned.
+- Declared directory-tree examples compared against the repository — complete
+  and unreleased.
 
 Exit condition: a release that changes the package version, and a refactor that
-moves a documented file, each fail the documentation check before merge.
+moves a documented file, each fail the documentation check before merge. Met
+locally; the milestone closes when these contracts ship in a release.
 
 ## Resolved decisions
 

@@ -1,7 +1,7 @@
 # Docsentry product specification
 
-**Status:** v0.5.0 released; the milestone 5 version and path reference
-contracts are implemented and unreleased
+**Status:** v0.5.0 released; the milestone 5 version reference, path reference,
+and directory tree contracts are implemented and unreleased
 
 **Last updated:** 2026-07-24
 
@@ -50,6 +50,8 @@ language true.
   local JSON manifest.
 - Declared inline path references, compared against the repository file
   listing.
+- Declared ASCII directory trees, compared against the repository in a
+  documented-paths-exist or exact mode.
 - Terminal, JSON, and SARIF 2.1.0 reports with non-zero exit status when error
   findings exist.
 
@@ -201,6 +203,29 @@ Existence is evaluated against the repository file listing, which excludes
 build output and dependency directories. A document that names a generated
 path should not select it through `include`.
 
+### Directory tree contract
+
+An architecture document often draws the source layout as an ASCII tree, which
+drifts as soon as a file moves. A directory tree contract selects fenced blocks
+by `fenceLabel` and compares their entries with the repository.
+
+The parser accepts indentation and box-drawing branches (`├──`, `└──`, `│`),
+inferring the indentation unit from the first indented entry. A trailing
+comment introduced by whitespace and `#` is removed, and an entry ending in `/`
+is a directory. A line that cannot be placed — inconsistent indentation, a
+skipped level, or an entry that is not a single path segment — reports
+`DOC_TREE_UNPARSED` as a warning rather than being silently dropped.
+
+Entries resolve beneath the configured `root`, which the tree's own first line
+may restate. Two comparison modes are available:
+
+- `declared-exists`, the default, reports `DOC_TREE_PATH_MISSING` for a
+  documented path the repository does not contain.
+- `exact` additionally reports `DOC_TREE_PATH_UNDOCUMENTED` for a repository
+  file below `root` that the tree omits. A directory listed without children
+  covers every file beneath it, so a tree can summarise a subtree instead of
+  enumerating it, and `ignore` patterns exclude generated files.
+
 ## Configuration
 
 The configuration filename is `.docsentry.json`. Configuration is
@@ -257,6 +282,15 @@ schema, Action, package-identity, and document-pair contracts.
       "documents": ["ARCHITECTURE.md"],
       "include": ["src/**", "test/**"]
     }
+  ],
+  "directoryTrees": [
+    {
+      "documents": ["ARCHITECTURE.md"],
+      "fenceLabel": "source-layout",
+      "root": "src",
+      "mode": "exact",
+      "ignore": ["**/*.generated.ts"]
+    }
   ]
 }
 ```
@@ -310,7 +344,7 @@ from `git diff <base>...HEAD`, including deletions, and cannot be combined with
 explicit document paths. It checks changed Markdown documents and also selects
 documents affected by a changed configuration, package manifest,
 version-reference manifest, schema, Action definition, paired document,
-local-link target, or referenced path. This is the only current
+local-link target, referenced path, or file below a documented tree root. This is the only current
 mode that invokes a trusted Git command; it never executes commands extracted
 from documentation.
 
@@ -350,6 +384,7 @@ JSON interfaces.
 | Document pairs | `DOC_PAIR_DOCUMENT_MISSING`, `DOC_PAIR_HEADINGS_MISMATCH`, `DOC_PAIR_COMMAND_MISMATCH`, `DOC_PAIR_CODE_BLOCK_MISMATCH` |
 | Version references | `DOC_VERSION_STALE`, `DOC_VERSION_REFERENCE_MISSING`, `DOC_VERSION_EVIDENCE_UNAVAILABLE` |
 | Path references | `DOC_PATH_MISSING` |
+| Directory trees | `DOC_TREE_PATH_MISSING`, `DOC_TREE_PATH_UNDOCUMENTED`, `DOC_TREE_UNPARSED` |
 
 ## Acceptance criteria for the first usable release
 

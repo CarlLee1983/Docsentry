@@ -60,7 +60,7 @@ export function selectedPath(value: string, reference: PathReferenceConfig): str
 }
 
 /** Every file path plus each directory prefix the repository actually contains. */
-function repositoryPaths(files: readonly string[]): ReadonlySet<string> {
+export function repositoryPaths(files: readonly string[]): ReadonlySet<string> {
   const present = new Set<string>(files);
   for (const file of files) {
     const segments = file.split("/");

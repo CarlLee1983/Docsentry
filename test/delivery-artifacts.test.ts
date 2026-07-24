@@ -99,6 +99,22 @@ describe("delivery artifacts", () => {
     ).toBe(false);
   });
 
+  it("accepts the same directory tree configuration as the runtime validator", async () => {
+    const schema = JSON.parse(await readFile(new URL("../schema.json", import.meta.url), "utf8"));
+    const validate = new Ajv({ strict: false }).compile(schema);
+    const tree = (overrides: Record<string, unknown>) => ({
+      directoryTrees: [{ documents: ["ARCHITECTURE.md"], fenceLabel: "source-layout", ...overrides }],
+    });
+
+    expect(validate(tree({}))).toBe(true);
+    expect(validate(tree({ root: "src", mode: "exact", ignore: ["**/*.generated.ts"] }))).toBe(true);
+    expect(validate(tree({ mode: "strict" }))).toBe(false);
+    expect(validate(tree({ root: "src/" }))).toBe(false);
+    expect(validate(tree({ root: "../outside" }))).toBe(false);
+    expect(validate(tree({ fenceLabel: "two labels" }))).toBe(false);
+    expect(validate(tree({ unsupported: true }))).toBe(false);
+  });
+
   it("publishes verified version tags as idempotent GitHub Releases", async () => {
     const release = YAML.parse(
       await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8"),

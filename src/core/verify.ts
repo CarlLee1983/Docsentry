@@ -5,6 +5,7 @@ import { validateLinks } from "./rules/link.js";
 import { validateDocumentPairs } from "./rules/pair.js";
 import { validatePackageContracts } from "./rules/package.js";
 import { selectedPath, validatePathReferences } from "./rules/path.js";
+import { isUnderRoot, validateDirectoryTrees } from "./rules/tree.js";
 import { validateStructuredExamples } from "./rules/structured.js";
 import { validateVersionReferences } from "./rules/version.js";
 import { parseMarkdown, type DocumentFact } from "../documents/markdown.js";
@@ -67,6 +68,7 @@ export class DocsentryVerificationEngine implements VerificationEngine {
       ...pairFindings,
       ...versionFindings,
       ...validatePathReferences(documents, scopedConfig, files),
+      ...validateDirectoryTrees(documents, scopedConfig, files),
     ]);
   }
 
@@ -97,6 +99,9 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     }
     for (const reference of config.pathReferences ?? []) {
       addMatches(selected, markdownFiles, reference.documents);
+    }
+    for (const tree of config.directoryTrees ?? []) {
+      addMatches(selected, markdownFiles, tree.documents);
     }
     for (const assertion of config.package?.assertions ?? []) {
       addIfExistingMarkdown(selected, markdownFiles, assertion.document);
@@ -140,6 +145,11 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     for (const reference of config.versionReferences ?? []) {
       if (changed.has(normalizeRepositoryPath(reference.manifest ?? "package.json"))) {
         selectMatching(reference.documents);
+      }
+    }
+    for (const tree of config.directoryTrees ?? []) {
+      if ([...changed].some((changedPath) => isUnderRoot(changedPath, tree.root))) {
+        selectMatching(tree.documents);
       }
     }
     for (const pair of config.documentPairs ?? []) {
@@ -209,6 +219,9 @@ function configForDocuments(config: DocsentryConfig, documents: readonly Documen
     ),
     pathReferences: config.pathReferences?.filter((reference) =>
       documents.some((document) => matchesPatterns(document.path, reference.documents)),
+    ),
+    directoryTrees: config.directoryTrees?.filter((tree) =>
+      documents.some((document) => matchesPatterns(document.path, tree.documents)),
     ),
   };
 }
