@@ -147,6 +147,192 @@ describe("enumeration contract", () => {
     ]);
   });
 
+  it("collects values from a JSON pointer to an array", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          enumerations: [
+            enumeration({
+              label: "diagnostic code",
+              values: { manifest: "output.schema.json", pointer: "/definitions/code/enum" },
+              documented: { pattern: "[a-z][a-z-]+" },
+            }),
+          ],
+        }),
+        "SPEC.md": "# Codes\n\nThe codes are `pattern-mismatch` and `orphan-tag`.\n",
+        "output.schema.json": JSON.stringify({
+          definitions: {
+            code: { enum: ["pattern-mismatch", "orphan-tag", "duplicate-version"] },
+            unrelated: { enum: ["major", "minor"] },
+          },
+        }),
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).resolves.toMatchObject({
+      findings: [
+        {
+          rule: "DOC_ENUM_UNDOCUMENTED",
+          message: expect.stringContaining("duplicate-version"),
+          evidence: { path: "output.schema.json", pointer: "/definitions/code/enum" },
+        },
+      ],
+    });
+  });
+
+  it("collects the keys of a YAML mapping a pointer selects", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          enumerations: [
+            enumeration({
+              label: "Action input",
+              values: { manifest: "action.yml", pointer: "/inputs" },
+              documented: { pattern: "[a-z][a-z-]+" },
+            }),
+          ],
+        }),
+        "SPEC.md": "# Inputs\n\nSupported inputs are `config` and `format`.\n",
+        "action.yml": "name: Docsentry\ninputs:\n  config:\n    required: false\n  format:\n    required: false\n",
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).resolves.toMatchObject({ findings: [] });
+  });
+
+  it("merges several pointers into one documented set", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          enumerations: [
+            enumeration({
+              label: "diagnostic code",
+              values: {
+                manifest: "output.schema.json",
+                pointer: ["/definitions/code/enum", "/definitions/checkCode/enum"],
+              },
+              documented: { pattern: "[a-z][a-z-]+", section: "Diagnostic codes" },
+            }),
+          ],
+        }),
+        "SPEC.md": [
+          "# Spec",
+          "",
+          "## Diagnostic codes",
+          "",
+          "| Group | Codes |",
+          "| --- | --- |",
+          "| Anomalies | `pattern-mismatch`, `orphan-tag` |",
+          "",
+          "The readiness checks use a separate set (`release-branch`, `release-worktree`).",
+          "",
+        ].join("\n"),
+        "output.schema.json": JSON.stringify({
+          definitions: {
+            code: { enum: ["pattern-mismatch", "orphan-tag"] },
+            checkCode: { enum: ["release-branch", "release-worktree"] },
+          },
+        }),
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).resolves.toMatchObject({ findings: [] });
+  });
+
+  it("reports an unusable pointer as unavailable evidence", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          enumerations: [
+            enumeration({
+              values: { manifest: "output.schema.json", pointer: "/definitions/absent" },
+              documented: { pattern: "[a-z-]+" },
+            }),
+          ],
+        }),
+        "SPEC.md": "# Codes\n\n`pattern-mismatch`\n",
+        "output.schema.json": JSON.stringify({ definitions: {} }),
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).resolves.toMatchObject({
+      findings: [{ rule: "DOC_ENUM_SOURCE_UNAVAILABLE", document: { path: "SPEC.md", line: 1 } }],
+    });
+  });
+
+  it("reports a missing manifest as unavailable evidence", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          enumerations: [
+            enumeration({
+              values: { manifest: "absent.json", pointer: "/enum" },
+              documented: { pattern: "[a-z-]+" },
+            }),
+          ],
+        }),
+        "SPEC.md": "# Codes\n\n`pattern-mismatch`\n",
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).resolves.toMatchObject({
+      findings: [{ rule: "DOC_ENUM_SOURCE_UNAVAILABLE" }],
+    });
+  });
+
+  it("selects the document when a pointer manifest changes", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          documents: ["SPEC.md", "docs/unrelated.md"],
+          enumerations: [
+            enumeration({
+              values: { manifest: "output.schema.json", pointer: "/enum" },
+              documented: { pattern: "[a-z][a-z-]+" },
+            }),
+          ],
+        }),
+        "SPEC.md": "# Codes\n\n`pattern-mismatch`\n",
+        "docs/unrelated.md": "[Unrelated missing document](missing.md)\n",
+        "output.schema.json": JSON.stringify({ enum: ["pattern-mismatch", "added-code"] }),
+      }),
+    );
+
+    const report = await engine.verify({ root: ".", changedPaths: ["output.schema.json"] });
+
+    expect(report.findings).toMatchObject([
+      { rule: "DOC_ENUM_UNDOCUMENTED", message: expect.stringContaining("added-code") },
+    ]);
+  });
+
+  it("rejects an enumeration that declares both evidence forms", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({
+          enumerations: [
+            enumeration({ values: { sources: ["src/**"], pattern: "x", manifest: "a.json", pointer: "/enum" } }),
+          ],
+        }),
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).rejects.toThrow(
+      "values must declare either sources and pattern, or manifest and pointer",
+    );
+  });
+
+  it("rejects an enumeration that declares neither evidence form", async () => {
+    const engine = new DocsentryVerificationEngine(
+      new MemoryRepositoryReader({
+        ".docsentry.json": JSON.stringify({ enumerations: [enumeration({ values: {} })] }),
+      }),
+    );
+
+    await expect(engine.verify({ root: "." })).rejects.toThrow(
+      "values must declare either sources and pattern, or manifest and pointer",
+    );
+  });
+
   it("rejects a value pattern that is not a valid expression", async () => {
     const engine = new DocsentryVerificationEngine(
       new MemoryRepositoryReader({

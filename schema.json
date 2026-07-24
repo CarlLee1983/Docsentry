@@ -212,19 +212,54 @@
           "description": "Name of the enumerated thing, used in finding messages."
         },
         "values": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["sources", "pattern"],
-          "properties": {
-            "sources": {
-              "$ref": "#/$defs/documentPatterns",
-              "description": "Glob patterns selecting the files that define the values."
+          "description": "Where the defined values come from: matched source text, or one pointer into a structured manifest.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["sources", "pattern"],
+              "properties": {
+                "sources": {
+                  "$ref": "#/$defs/documentPatterns",
+                  "description": "Glob patterns selecting the files that define the values."
+                },
+                "pattern": {
+                  "$ref": "#/$defs/nonEmptyString",
+                  "description": "Regular expression matched against source text; its first capture group, or the whole match, is the value."
+                }
+              }
             },
-            "pattern": {
-              "$ref": "#/$defs/nonEmptyString",
-              "description": "Regular expression matched against source text; its first capture group, or the whole match, is the value."
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["manifest", "pointer"],
+              "properties": {
+                "manifest": {
+                  "$ref": "#/$defs/nonEmptyString",
+                  "description": "JSON or YAML file holding the values."
+                },
+                "pointer": {
+                  "description": "JSON pointer, or list of pointers, to an array of values or to a mapping whose keys are the values.",
+                  "oneOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^/"
+                    },
+                    {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^/"
+                      }
+                    }
+                  ]
+                }
+              }
             }
-          }
+          ]
         },
         "documented": {
           "type": "object",
