@@ -57,6 +57,9 @@
         "*.json",
         "*.yml",
         "*.md"
+      ],
+      "exclude": [
+        ".docsentry-baseline.json"
       ]
     }
   ],

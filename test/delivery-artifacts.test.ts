@@ -92,6 +92,9 @@ describe("delivery artifacts", () => {
     const validate = new Ajv({ strict: false }).compile(schema);
 
     expect(validate({ pathReferences: [{ documents: ["README.md"], include: ["src/**"] }] })).toBe(true);
+    expect(
+      validate({ pathReferences: [{ documents: ["README.md"], include: ["*.json"], exclude: ["generated.json"] }] }),
+    ).toBe(true);
     expect(validate({ pathReferences: [{ documents: ["README.md"] }] })).toBe(false);
     expect(validate({ pathReferences: [{ documents: ["README.md"], include: [] }] })).toBe(false);
     expect(

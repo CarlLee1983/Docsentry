@@ -203,6 +203,13 @@ Existence is evaluated against the repository file listing, which excludes
 build output and dependency directories. A document that names a generated
 path should not select it through `include`.
 
+`exclude` removes paths from that selection. It exists for a filename a
+document names as a convention rather than as a file it claims to contain —
+`.docsentry-baseline.json`, for example, is written by a command rather than
+committed. Prefer a narrower `include` where one is available; `exclude` is
+for the case where the same pattern must both cover real files and skip a
+named convention.
+
 ### Directory tree contract
 
 An architecture document often draws the source layout as an ASCII tree, which
@@ -327,6 +334,8 @@ docsentry check [paths...]
 docsentry check --config .docsentry.json --format json
 docsentry check --format sarif
 docsentry check --changed origin/main
+docsentry baseline
+docsentry check --no-baseline
 docsentry inspect README.md
 ```
 
@@ -338,6 +347,46 @@ passing judgment.
 `docsentry --help` and `docsentry help <command>` return usage text with status
 zero and do not read repository files. The `--help` and `-h` aliases are also
 accepted immediately after each command.
+
+## Baseline
+
+A repository that adopts Docsentry after its documentation has already drifted
+faces every existing finding at once. `docsentry baseline` records the current
+findings so that a later `check` reports only new ones. This makes adoption
+incremental without weakening any contract.
+
+`check` applies `.docsentry-baseline.json` when that file exists, mirroring how
+`.docsentry.json` is discovered. `--baseline <path>` selects another location
+and is an invocation error when that file is absent; `--no-baseline` reports
+every finding.
+
+A baseline is a count per document and rule identifier:
+
+```json
+{
+  "version": 1,
+  "suppressions": {
+    "README.md": { "DOC_LINK_MISSING": 2, "DOC_PATH_MISSING": 1 }
+  }
+}
+```
+
+Counts are deliberately coarser than individual findings. Rule identifiers are
+already a compatibility surface, while messages and line numbers are not, so a
+baseline keyed on them would break whenever wording changed or a document was
+edited above an existing problem. The cost is that fixing one finding and
+introducing another of the same rule in the same document is not reported.
+
+Suppression is deterministic: findings are ordered before the baseline is
+applied, so the same repository state always suppresses the same findings.
+A suppressed finding does not affect the exit status. When a baseline entry no
+longer matches any finding, the terminal report says how many are stale and
+recommends re-recording; the entry is not removed automatically, because
+rewriting a committed file during a check would surprise CI.
+
+`check --baseline` reports `summary.suppressed` in terminal and JSON output.
+The SARIF report is unchanged; a code-scanning consumer receives only the
+findings that survive suppression.
 
 `--changed <base>` is an opt-in focused-review mode. It obtains local paths
 from `git diff <base>...HEAD`, including deletions, and cannot be combined with
@@ -364,7 +413,8 @@ type Finding = {
 ```
 
 JSON output must contain a `findings` array and a summary of error and warning
-counts. Rule identifiers are a compatibility surface once released.
+counts. When a baseline is applied, the summary also carries `suppressed`.
+Rule identifiers are a compatibility surface once released.
 
 `--format sarif` emits a SARIF 2.1.0 log. Each Finding becomes one result with
 its rule ID, severity, message, and repository-relative document location.

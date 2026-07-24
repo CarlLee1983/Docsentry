@@ -60,6 +60,7 @@ export function validatePathReferences(
 export function selectedPath(value: string, reference: PathReferenceConfig): string | undefined {
   const candidate = pathCandidate(value);
   if (!candidate || !matchesPatterns(candidate, reference.include)) return undefined;
+  if (reference.exclude && matchesPatterns(candidate, reference.exclude)) return undefined;
   return candidate;
 }
 

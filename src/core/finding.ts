@@ -23,7 +23,8 @@ export type Finding = {
 
 export type VerificationReport = {
   findings: readonly Finding[];
-  summary: { errors: number; warnings: number };
+  /** `suppressed` is present only when a baseline was applied. */
+  summary: { errors: number; warnings: number; suppressed?: number };
 };
 
 export function orderFindings(findings: readonly Finding[]): Finding[] {

@@ -186,6 +186,10 @@
         "include": {
           "$ref": "#/$defs/documentPatterns",
           "description": "Repository-relative glob patterns selecting which inline code spans are treated as paths."
+        },
+        "exclude": {
+          "$ref": "#/$defs/documentPatterns",
+          "description": "Glob patterns removed from the selection, for filenames a document names as a convention rather than a file."
         }
       }
     },

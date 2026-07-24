@@ -49,6 +49,9 @@ AST details or evidence-loading order.
   rather than the filesystem, so both adapters agree on whether a directory
   reference resolves and ignored build output is never treated as evidence.
 - Invalid Docsentry configuration is an invocation error, not a Finding.
+- Baseline suppression happens outside the engine, on an already-ordered
+  report, so a contract never learns that a finding is suppressed and the
+  engine stays deterministic.
 - The packaged JSON Schema and runtime validator accept the same configuration
   properties; unknown properties are invocation errors.
 - A malformed individual document is reported as a Finding whenever a useful
@@ -98,6 +101,7 @@ src/
     finding.ts          # report model and deterministic ordering
     config.ts           # config parsing and validation
     errors.ts           # invocation and repository path errors
+    baseline.ts         # suppression snapshot model
     rules/              # sealed registry; pure rule logic where possible
       link.ts
       package.ts
@@ -125,6 +129,7 @@ src/
     index.ts
     init.ts
     inspect.ts
+    baseline.ts         # baseline snapshot read and write
     changed-files.ts    # opt-in Git change detection
   reporters/
     terminal.ts

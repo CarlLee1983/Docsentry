@@ -44,6 +44,7 @@ export type VersionReferenceConfig = {
 export type PathReferenceConfig = {
   documents: readonly string[];
   include: readonly string[];
+  exclude?: readonly string[];
 };
 
 export type DirectoryTreeConfig = {
@@ -225,10 +226,11 @@ function validateVersionReference(input: unknown, source: string): VersionRefere
 
 function validatePathReference(input: unknown, source: string): PathReferenceConfig {
   const value = object(input, source);
-  allowOnly(value, ["documents", "include"], source);
+  allowOnly(value, ["documents", "include", "exclude"], source);
   return {
     documents: requiredStrings(value.documents, "documents", source),
     include: requiredStrings(value.include, "include", source),
+    exclude: optionalStrings(value.exclude, "exclude", source),
   };
 }
 

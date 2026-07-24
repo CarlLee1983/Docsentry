@@ -106,6 +106,20 @@ v0.6.0 delivery:
 Exit condition: a release that changes the package version, and a refactor that
 moves a documented file, each fail the documentation check before merge.
 
+## Milestone 6 — incremental adoption — in progress
+
+A repository that adopts Docsentry after its documentation has drifted meets
+every existing finding at once, which is the main obstacle to adoption outside
+this project.
+
+Deliverables:
+
+- `docsentry baseline` and `check --baseline <path>`, keyed on document and
+  rule identifier — complete and unreleased.
+
+Exit condition: an existing repository can enable Docsentry in CI in one
+commit, failing only on documentation that changes afterwards.
+
 ## Resolved decisions
 
 | Decision | Current default | Resolve before |
