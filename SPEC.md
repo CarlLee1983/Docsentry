@@ -1,8 +1,9 @@
 # Docsentry product specification
 
-**Status:** v0.5.0 released; milestone 4 implementation is complete
+**Status:** v0.5.0 released; the milestone 5 version reference contract is
+implemented and unreleased
 
-**Last updated:** 2026-07-23
+**Last updated:** 2026-07-24
 
 ## Problem
 
@@ -45,6 +46,8 @@ language true.
   `uses:` reference.
 - Structural comparison of explicitly paired Markdown documents: headings,
   commands, and fenced code blocks.
+- Declared version references, compared against a version value read from a
+  local JSON manifest.
 - Terminal, JSON, and SARIF 2.1.0 reports with non-zero exit status when error
   findings exist.
 
@@ -141,6 +144,36 @@ structures:
 
 Maintainers can choose a subset of these comparisons per pair.
 
+### Version reference contract
+
+Documents restate release versions in install commands, Action references, and
+schema URLs. A release changes the manifest but cannot change those documents,
+so the contract compares them against the manifest instead of against a value
+repeated in the configuration.
+
+A version reference declares a literal `pattern` containing one or more
+`{version}` placeholders. Docsentry matches that pattern anywhere in each
+selected document, including inside fenced code blocks, and compares every
+matched version against a JSON pointer in a local manifest:
+
+- Each placeholder matches one SemVer version, including an optional
+  prerelease or build suffix.
+- The surrounding literal text must match exactly, which keeps unrelated
+  version literals — historical entries in a changelog, for example — outside
+  the contract.
+- A documented version that differs from its evidence reports
+  `DOC_VERSION_STALE` at the version literal's own line and column.
+- `required: true` reports `DOC_VERSION_REFERENCE_MISSING` when a selected
+  document never states the pattern.
+- An unreadable manifest or an absent pointer reports
+  `DOC_VERSION_EVIDENCE_UNAVAILABLE` at each documented reference, because the
+  claim cannot be evaluated rather than because it is wrong.
+
+`manifest` defaults to `package.json` and `evidence` defaults to `/version`, so
+the common case declares only `documents` and `pattern`. This contract governs
+version literals a maintainer has declared; it makes no attempt to discover
+version-like text on its own.
+
 ## Configuration
 
 The configuration filename is `.docsentry.json`. Configuration is
@@ -183,6 +216,14 @@ schema, Action, package-identity, and document-pair contracts.
       "mirror": "docs/README.zh-TW.md",
       "requireSame": ["headings", "commands", "codeBlocks"]
     }
+  ],
+  "versionReferences": [
+    {
+      "documents": ["README.md"],
+      "pattern": "CarlLee1983/Docsentry@v{version}",
+      "label": "documented Action reference",
+      "required": true
+    }
   ]
 }
 ```
@@ -201,6 +242,11 @@ reference shown in its workflow examples. Docsentry compares the reference
 without its `@ref` suffix and validates only that Action's `with:` mapping.
 Omit `uses` only when every `with:` mapping in the selected YAML examples is
 intended for the configured Action.
+
+A version reference `pattern` is literal text apart from its `{version}`
+placeholders; Docsentry escapes the literal part, so characters such as `.`,
+`@`, and `/` match themselves. A configuration that omits `manifest` reads
+`package.json`, and one that omits `evidence` reads the `/version` pointer.
 
 ## Command interface
 
@@ -228,8 +274,9 @@ accepted immediately after each command.
 `--changed <base>` is an opt-in focused-review mode. It obtains local paths
 from `git diff <base>...HEAD`, including deletions, and cannot be combined with
 explicit document paths. It checks changed Markdown documents and also selects
-documents affected by a changed configuration, package manifest, schema, Action
-definition, paired document, or local-link target. This is the only current
+documents affected by a changed configuration, package manifest,
+version-reference manifest, schema, Action definition, paired document, or
+local-link target. This is the only current
 mode that invokes a trusted Git command; it never executes commands extracted
 from documentation.
 
@@ -267,6 +314,7 @@ JSON interfaces.
 | Structured examples | `DOC_EXAMPLE_PARSE`, `DOC_SCHEMA_UNAVAILABLE`, `DOC_SCHEMA_INVALID` |
 | Action examples | `DOC_ACTION_UNAVAILABLE`, `DOC_ACTION_INPUT_UNKNOWN` |
 | Document pairs | `DOC_PAIR_DOCUMENT_MISSING`, `DOC_PAIR_HEADINGS_MISMATCH`, `DOC_PAIR_COMMAND_MISMATCH`, `DOC_PAIR_CODE_BLOCK_MISMATCH` |
+| Version references | `DOC_VERSION_STALE`, `DOC_VERSION_REFERENCE_MISSING`, `DOC_VERSION_EVIDENCE_UNAVAILABLE` |
 
 ## Acceptance criteria for the first usable release
 

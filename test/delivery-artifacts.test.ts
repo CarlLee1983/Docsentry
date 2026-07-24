@@ -72,6 +72,21 @@ describe("delivery artifacts", () => {
     ).toBe(true);
   });
 
+  it("accepts the same version reference configuration as the runtime validator", async () => {
+    const schema = JSON.parse(await readFile(new URL("../schema.json", import.meta.url), "utf8"));
+    const validate = new Ajv({ strict: false }).compile(schema);
+    const reference = (overrides: Record<string, unknown>) => ({
+      versionReferences: [{ documents: ["README.md"], pattern: "docsentry@v{version}", ...overrides }],
+    });
+
+    expect(validate(reference({}))).toBe(true);
+    expect(validate(reference({ manifest: "action-manifest.json", evidence: "/release/tag" }))).toBe(true);
+    expect(validate(reference({ label: "documented Action reference", required: true }))).toBe(true);
+    expect(validate({ versionReferences: [{ documents: ["README.md"], pattern: "docsentry@v0.5.0" }] })).toBe(false);
+    expect(validate(reference({ evidence: "version" }))).toBe(false);
+    expect(validate(reference({ unsupported: true }))).toBe(false);
+  });
+
   it("publishes verified version tags as idempotent GitHub Releases", async () => {
     const release = YAML.parse(
       await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8"),

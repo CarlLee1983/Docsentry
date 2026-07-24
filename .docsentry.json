@@ -35,5 +35,15 @@
       "action": "action.yml",
       "uses": "CarlLee1983/Docsentry"
     }
+  ],
+  "versionReferences": [
+    {
+      "documents": [
+        "README.md"
+      ],
+      "pattern": "CarlLee1983/Docsentry@v{version}",
+      "label": "documented Action reference",
+      "required": true
+    }
   ]
 }

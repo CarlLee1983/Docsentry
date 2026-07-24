@@ -1,6 +1,7 @@
 # Docsentry architecture
 
-**Status:** v0.5.0 released; milestone 4 implementation is complete
+**Status:** v0.5.0 released; the milestone 5 version reference contract is
+implemented and unreleased
 
 ## Design decision
 
@@ -75,7 +76,7 @@ package.
 | Repository reader | Read files and list paths beneath one root | Node filesystem access; an in-memory adapter for tests |
 | Document parser | Produce headings, links, commands, and fenced blocks with locations | Markdown AST parsing and source-position recovery |
 | Evidence collector | Produce package, schema, and Action facts | Parse `package.json`, JSON Schema, Action metadata, and source-located workflow YAML mappings |
-| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, and pair comparisons |
+| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, pair, and declared version-reference comparisons |
 | Reporter | Render an already-complete report | Terminal, JSON, and SARIF 2.1.0 formatting |
 
 The Repository reader has a real seam because production code needs a Node
@@ -98,6 +99,7 @@ src/
     memory-reader.ts    # test Adapter
   documents/
     markdown.ts         # source-located Markdown facts
+    location.ts         # character offset to source location
   evidence/
     package.ts
     structured.ts       # JSON Schema and YAML example evidence

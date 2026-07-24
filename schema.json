@@ -35,6 +35,12 @@
       "items": {
         "$ref": "#/$defs/documentPair"
       }
+    },
+    "versionReferences": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/versionReference"
+      }
     }
   },
   "$defs": {
@@ -117,6 +123,43 @@
         "uses": {
           "$ref": "#/$defs/nonEmptyString",
           "description": "Optional GitHub Action reference to select from workflow examples. Its @ref suffix is ignored when matching."
+        }
+      }
+    },
+    "versionReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["documents", "pattern"],
+      "properties": {
+        "documents": {
+          "$ref": "#/$defs/documentPatterns"
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\{version\\}",
+          "description": "Literal text surrounding one or more {version} placeholders, such as CarlLee1983/Docsentry@v{version}."
+        },
+        "manifest": {
+          "$ref": "#/$defs/nonEmptyString",
+          "default": "package.json",
+          "description": "JSON manifest holding the version evidence."
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^/",
+          "default": "/version",
+          "description": "JSON pointer to the authoritative version value in the manifest."
+        },
+        "label": {
+          "$ref": "#/$defs/nonEmptyString",
+          "description": "Human-readable name for this reference, used in finding messages."
+        },
+        "required": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report a finding when a selected document never states the pattern."
         }
       }
     },

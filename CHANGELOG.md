@@ -3,6 +3,20 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## Unreleased
+
+### Added
+
+- A version reference contract. `versionReferences` selects documents and a
+  literal pattern containing one or more `{version}` placeholders, then
+  compares every documented version against a JSON pointer in a local
+  manifest. New rules: `DOC_VERSION_STALE`,
+  `DOC_VERSION_REFERENCE_MISSING`, and `DOC_VERSION_EVIDENCE_UNAVAILABLE`.
+- `check --changed <base>` now selects the documents of a version reference
+  whose manifest changed.
+- Docsentry dogfoods the contract by requiring its own README to document the
+  released Action reference.
+
 ## v0.5.0 — 2026-07-23
 
 ### Added

@@ -99,6 +99,31 @@ For Action examples that include more than one `uses:` step, set
 only that Action's `with:` keys, reporting an unknown key at its exact YAML
 line.
 
+To keep a documented release version from outliving its manifest, declare a
+version reference. Docsentry matches the literal pattern in each selected
+document and compares every `{version}` placeholder against a JSON pointer in a
+local manifest:
+
+```json
+{
+  "versionReferences": [
+    {
+      "documents": ["README.md"],
+      "pattern": "CarlLee1983/Docsentry@v{version}",
+      "label": "documented Action reference",
+      "required": true
+    }
+  ]
+}
+```
+
+`manifest` defaults to `package.json` and `evidence` defaults to `/version`.
+A documented version that no longer matches its evidence reports
+`DOC_VERSION_STALE` at the version literal itself, so the surrounding literal
+text keeps unrelated versions — a changelog history, for example — outside the
+contract. Set `required` to report a document that never states the reference
+at all.
+
 ## GitHub Actions
 
 The composite Action runs the Docsentry code bundled with the Action revision,

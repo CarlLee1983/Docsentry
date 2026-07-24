@@ -5,6 +5,7 @@ import { validateLinks } from "./rules/link.js";
 import { validateDocumentPairs } from "./rules/pair.js";
 import { validatePackageContracts } from "./rules/package.js";
 import { validateStructuredExamples } from "./rules/structured.js";
+import { validateVersionReferences } from "./rules/version.js";
 import { parseMarkdown, type DocumentFact } from "../documents/markdown.js";
 import { NodeRepositoryReader } from "../repository/node-reader.js";
 import { normalizeRepositoryPath, resolveRepositoryPath } from "../repository/path.js";
@@ -47,19 +48,22 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     };
 
     const scopedConfig = request.changedPaths ? configForDocuments(config, documents) : config;
-    const [linkFindings, packageFindings, structuredFindings, actionFindings, pairFindings] = await Promise.all([
-      validateLinks(documents, this.reader, loadDocument),
-      validatePackageContracts(documents, scopedConfig, this.reader, loadDocument),
-      validateStructuredExamples(documents, scopedConfig, this.reader),
-      validateActionExamples(documents, scopedConfig, this.reader),
-      validateDocumentPairs(scopedConfig, loadDocument),
-    ]);
+    const [linkFindings, packageFindings, structuredFindings, actionFindings, pairFindings, versionFindings] =
+      await Promise.all([
+        validateLinks(documents, this.reader, loadDocument),
+        validatePackageContracts(documents, scopedConfig, this.reader, loadDocument),
+        validateStructuredExamples(documents, scopedConfig, this.reader),
+        validateActionExamples(documents, scopedConfig, this.reader),
+        validateDocumentPairs(scopedConfig, loadDocument),
+        validateVersionReferences(documents, scopedConfig, this.reader),
+      ]);
     return createReport([
       ...linkFindings,
       ...packageFindings,
       ...structuredFindings,
       ...actionFindings,
       ...pairFindings,
+      ...versionFindings,
     ]);
   }
 
@@ -84,6 +88,9 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     for (const pair of config.documentPairs ?? []) {
       addIfExistingMarkdown(selected, markdownFiles, pair.canonical);
       addIfExistingMarkdown(selected, markdownFiles, pair.mirror);
+    }
+    for (const reference of config.versionReferences ?? []) {
+      addMatches(selected, markdownFiles, reference.documents);
     }
     for (const assertion of config.package?.assertions ?? []) {
       addIfExistingMarkdown(selected, markdownFiles, assertion.document);
@@ -123,6 +130,11 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     }
     for (const actionExample of config.actionExamples ?? []) {
       if (changed.has(normalizeRepositoryPath(actionExample.action))) selectMatching(actionExample.documents);
+    }
+    for (const reference of config.versionReferences ?? []) {
+      if (changed.has(normalizeRepositoryPath(reference.manifest ?? "package.json"))) {
+        selectMatching(reference.documents);
+      }
     }
     for (const pair of config.documentPairs ?? []) {
       const canonical = normalizeRepositoryPath(pair.canonical);
@@ -182,6 +194,9 @@ function configForDocuments(config: DocsentryConfig, documents: readonly Documen
     ),
     documentPairs: config.documentPairs?.filter((pair) =>
       selected.has(normalizeRepositoryPath(pair.canonical)) || selected.has(normalizeRepositoryPath(pair.mirror)),
+    ),
+    versionReferences: config.versionReferences?.filter((reference) =>
+      documents.some((document) => matchesPatterns(document.path, reference.documents)),
     ),
   };
 }

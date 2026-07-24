@@ -81,6 +81,24 @@ Deliverables:
 Exit condition: a workflow example containing several Actions reports only an
 unknown input belonging to the configured Action, at that input's source line.
 
+## Milestone 5 — facts that outlive a release — in progress
+
+Documents restate two kinds of repository fact that no existing contract
+covers: the current release version, and the paths of files the repository
+actually contains. Both are declared explicitly, so a document keeps its
+freedom to mention a historical version or an illustrative path.
+
+Deliverables:
+
+- Declared version references compared against a manifest pointer — complete
+  and unreleased.
+- Declared inline path references, restricted to configured path patterns —
+  planned.
+- Declared directory-tree examples compared against the repository — planned.
+
+Exit condition: a release that changes the package version, and a refactor that
+moves a documented file, each fail the documentation check before merge.
+
 ## Resolved decisions
 
 | Decision | Current default | Resolve before |

@@ -1,6 +1,7 @@
 import type { DocsentryConfig } from "../config.js";
 import type { Finding } from "../finding.js";
 import { extractShellCommands, packageScriptName } from "../../documents/commands.js";
+import { locationAt } from "../../documents/location.js";
 import type { DocumentFact } from "../../documents/markdown.js";
 import { isRecord, jsonPointer, readPackageEvidence } from "../../evidence/package.js";
 import type { RepositoryReader } from "../../repository/reader.js";
@@ -89,10 +90,7 @@ export async function validatePackageContracts(
 function literalLocation(document: DocumentFact, literal: string): Finding["document"] | undefined {
   const offset = document.contents.indexOf(literal);
   if (offset < 0) return undefined;
-  const prior = document.contents.slice(0, offset);
-  const line = prior.split("\n").length;
-  const finalNewline = prior.lastIndexOf("\n");
-  return { path: document.path, line, column: offset - finalNewline };
+  return locationAt(document.path, document.contents, offset);
 }
 
 function messageOf(error: unknown): string {
