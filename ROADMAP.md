@@ -81,7 +81,7 @@ Deliverables:
 Exit condition: a workflow example containing several Actions reports only an
 unknown input belonging to the configured Action, at that input's source line.
 
-## Milestone 5 — facts that outlive a release — in progress
+## Milestone 5 — facts that outlive a release — complete in v0.6.0
 
 Documents restate two kinds of repository fact that no existing contract
 covers: the current release version, and the paths of files the repository
@@ -90,16 +90,21 @@ freedom to mention a historical version or an illustrative path.
 
 Deliverables:
 
-- Declared version references compared against a manifest pointer — complete
-  and unreleased.
-- Declared inline path references, restricted to configured path patterns —
-  complete and unreleased.
-- Declared directory-tree examples compared against the repository — complete
-  and unreleased.
+- Declared version references compared against a manifest pointer.
+- Declared inline path references, restricted to configured path patterns.
+- Declared directory-tree examples compared against the repository, in a
+  documented-paths-exist or exact mode.
+
+v0.6.0 delivery:
+
+- This repository enables all three contracts against its own documentation,
+  including its `ARCHITECTURE.md` source layout in `exact` mode.
+- The v0.6.0 release itself was gated by the new contract: bumping the package
+  version reported `DOC_VERSION_STALE` against the documented Action reference
+  in `README.md` until it was updated.
 
 Exit condition: a release that changes the package version, and a refactor that
-moves a documented file, each fail the documentation check before merge. Met
-locally; the milestone closes when these contracts ship in a release.
+moves a documented file, each fail the documentation check before merge.
 
 ## Resolved decisions
 

@@ -3,7 +3,7 @@
 > Verify that repository documentation is supported by the code, configuration,
 > schemas, and GitHub Action definitions it describes.
 
-**Status:** v0.5.0 released. Docsentry is dogfooded in its own CI and
+**Status:** v0.6.0 released. Docsentry is dogfooded in its own CI and
 in the sibling Tagsmith repository; see the [changelog](CHANGELOG.md) for
 release details.
 
@@ -176,7 +176,7 @@ using Node.js 20. A repository workflow can use it as follows:
 ```yaml
 steps:
   - uses: actions/checkout@v4
-  - uses: CarlLee1983/Docsentry@v0.5.0
+  - uses: CarlLee1983/Docsentry@v0.6.0
     with:
       config: .docsentry.json
       format: json

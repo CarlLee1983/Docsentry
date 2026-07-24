@@ -1,7 +1,6 @@
 # Docsentry architecture
 
-**Status:** v0.5.0 released; the milestone 5 version reference, path reference,
-and directory tree contracts are implemented and unreleased
+**Status:** v0.6.0 released; milestone 5 implementation is complete
 
 ## Design decision
 
