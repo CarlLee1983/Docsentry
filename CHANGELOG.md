@@ -3,6 +3,39 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## Unreleased
+
+### Added
+
+- A version reference contract. `versionReferences` selects documents and a
+  literal pattern containing one or more `{version}` placeholders, then
+  compares every documented version against a JSON pointer in a local
+  manifest. New rules: `DOC_VERSION_STALE`,
+  `DOC_VERSION_REFERENCE_MISSING`, and `DOC_VERSION_EVIDENCE_UNAVAILABLE`.
+- `check --changed <base>` now selects the documents of a version reference
+  whose manifest changed.
+- Docsentry dogfoods the contract by requiring its own README to document the
+  released Action reference.
+- A path reference contract. `pathReferences` declares which inline code spans
+  are repository paths through `include` glob patterns, and reports
+  `DOC_PATH_MISSING` for a span the repository does not contain. Whitespace,
+  glob metacharacters, and bare file extensions keep prose and commands
+  outside the contract.
+- The Markdown parser now extracts inline code spans with source locations,
+  and `docsentry inspect` reports them.
+- `check --changed <base>` now selects documents that reference a changed or
+  deleted path.
+- A directory tree contract. `directoryTrees` compares labelled ASCII trees
+  with the repository, in `declared-exists` or `exact` mode, reporting
+  `DOC_TREE_PATH_MISSING`, `DOC_TREE_PATH_UNDOCUMENTED`, and
+  `DOC_TREE_UNPARSED`. The parser accepts indented and box-drawing trees.
+- Docsentry verifies its own `ARCHITECTURE.md` source layout in `exact` mode.
+
+### Fixed
+
+- `ARCHITECTURE.md` documented a `src/cli/check.ts` that does not exist and
+  omitted six source files; its tree now matches the checkout and is verified.
+
 ## v0.5.0 — 2026-07-23
 
 ### Added

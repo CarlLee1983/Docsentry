@@ -12,6 +12,7 @@ export async function inspectDocument(root: string, filePath: string): Promise<s
       headings: document.headings,
       links: document.links,
       codeBlocks: document.codeBlocks,
+      codeSpans: document.codeSpans,
     },
     null,
     2,

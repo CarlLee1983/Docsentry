@@ -1,8 +1,9 @@
 # Docsentry product specification
 
-**Status:** v0.5.0 released; milestone 4 implementation is complete
+**Status:** v0.5.0 released; the milestone 5 version reference, path reference,
+and directory tree contracts are implemented and unreleased
 
-**Last updated:** 2026-07-23
+**Last updated:** 2026-07-24
 
 ## Problem
 
@@ -45,6 +46,12 @@ language true.
   `uses:` reference.
 - Structural comparison of explicitly paired Markdown documents: headings,
   commands, and fenced code blocks.
+- Declared version references, compared against a version value read from a
+  local JSON manifest.
+- Declared inline path references, compared against the repository file
+  listing.
+- Declared ASCII directory trees, compared against the repository in a
+  documented-paths-exist or exact mode.
 - Terminal, JSON, and SARIF 2.1.0 reports with non-zero exit status when error
   findings exist.
 
@@ -141,6 +148,84 @@ structures:
 
 Maintainers can choose a subset of these comparisons per pair.
 
+### Version reference contract
+
+Documents restate release versions in install commands, Action references, and
+schema URLs. A release changes the manifest but cannot change those documents,
+so the contract compares them against the manifest instead of against a value
+repeated in the configuration.
+
+A version reference declares a literal `pattern` containing one or more
+`{version}` placeholders. Docsentry matches that pattern anywhere in each
+selected document, including inside fenced code blocks, and compares every
+matched version against a JSON pointer in a local manifest:
+
+- Each placeholder matches one SemVer version, including an optional
+  prerelease or build suffix.
+- The surrounding literal text must match exactly, which keeps unrelated
+  version literals — historical entries in a changelog, for example — outside
+  the contract.
+- A documented version that differs from its evidence reports
+  `DOC_VERSION_STALE` at the version literal's own line and column.
+- `required: true` reports `DOC_VERSION_REFERENCE_MISSING` when a selected
+  document never states the pattern.
+- An unreadable manifest or an absent pointer reports
+  `DOC_VERSION_EVIDENCE_UNAVAILABLE` at each documented reference, because the
+  claim cannot be evaluated rather than because it is wrong.
+
+`manifest` defaults to `package.json` and `evidence` defaults to `/version`, so
+the common case declares only `documents` and `pattern`. This contract governs
+version literals a maintainer has declared; it makes no attempt to discover
+version-like text on its own.
+
+### Path reference contract
+
+Documents name repository files in inline code spans, and a refactor that moves
+a file leaves those names behind. A path reference declares which inline code
+spans are paths through `include`, a list of repository-relative glob patterns.
+Docsentry checks only the spans that match:
+
+- A candidate is resolved against the repository root, not against the document
+  that mentions it, because inline prose names a file rather than links to it.
+- A candidate exists when the repository contains that file, or contains any
+  file beneath it when the candidate names a directory.
+- A missing candidate reports `DOC_PATH_MISSING` at the code span.
+
+Several kinds of inline code never become candidates, so ordinary prose and
+commands stay outside the contract: text containing whitespace (`npm run
+build`), text containing glob metacharacters (`docs/**/*.md`), a bare file
+extension (`.md`), and a path that leaves the checkout (`../Tagsmith/`). A
+consequence of the extension rule is that an extensionless dotfile such as
+`.gitignore` is also excluded; the contract prefers a missed check to a false
+report.
+
+Existence is evaluated against the repository file listing, which excludes
+build output and dependency directories. A document that names a generated
+path should not select it through `include`.
+
+### Directory tree contract
+
+An architecture document often draws the source layout as an ASCII tree, which
+drifts as soon as a file moves. A directory tree contract selects fenced blocks
+by `fenceLabel` and compares their entries with the repository.
+
+The parser accepts indentation and box-drawing branches (`├──`, `└──`, `│`),
+inferring the indentation unit from the first indented entry. A trailing
+comment introduced by whitespace and `#` is removed, and an entry ending in `/`
+is a directory. A line that cannot be placed — inconsistent indentation, a
+skipped level, or an entry that is not a single path segment — reports
+`DOC_TREE_UNPARSED` as a warning rather than being silently dropped.
+
+Entries resolve beneath the configured `root`, which the tree's own first line
+may restate. Two comparison modes are available:
+
+- `declared-exists`, the default, reports `DOC_TREE_PATH_MISSING` for a
+  documented path the repository does not contain.
+- `exact` additionally reports `DOC_TREE_PATH_UNDOCUMENTED` for a repository
+  file below `root` that the tree omits. A directory listed without children
+  covers every file beneath it, so a tree can summarise a subtree instead of
+  enumerating it, and `ignore` patterns exclude generated files.
+
 ## Configuration
 
 The configuration filename is `.docsentry.json`. Configuration is
@@ -183,6 +268,29 @@ schema, Action, package-identity, and document-pair contracts.
       "mirror": "docs/README.zh-TW.md",
       "requireSame": ["headings", "commands", "codeBlocks"]
     }
+  ],
+  "versionReferences": [
+    {
+      "documents": ["README.md"],
+      "pattern": "CarlLee1983/Docsentry@v{version}",
+      "label": "documented Action reference",
+      "required": true
+    }
+  ],
+  "pathReferences": [
+    {
+      "documents": ["ARCHITECTURE.md"],
+      "include": ["src/**", "test/**"]
+    }
+  ],
+  "directoryTrees": [
+    {
+      "documents": ["ARCHITECTURE.md"],
+      "fenceLabel": "source-layout",
+      "root": "src",
+      "mode": "exact",
+      "ignore": ["**/*.generated.ts"]
+    }
   ]
 }
 ```
@@ -202,6 +310,11 @@ without its `@ref` suffix and validates only that Action's `with:` mapping.
 Omit `uses` only when every `with:` mapping in the selected YAML examples is
 intended for the configured Action.
 
+A version reference `pattern` is literal text apart from its `{version}`
+placeholders; Docsentry escapes the literal part, so characters such as `.`,
+`@`, and `/` match themselves. A configuration that omits `manifest` reads
+`package.json`, and one that omits `evidence` reads the `/version` pointer.
+
 ## Command interface
 
 The initial CLI surface stays small:
@@ -220,7 +333,8 @@ docsentry inspect README.md
 `check` is the primary Module interface for maintainers and CI. It evaluates
 all applicable rules and returns every Finding; it must not stop at the first
 failure. `inspect` is a diagnostic command that shows the extracted links,
-commands, code blocks, and headings for one Document without passing judgment.
+commands, code blocks, code spans, and headings for one Document without
+passing judgment.
 `docsentry --help` and `docsentry help <command>` return usage text with status
 zero and do not read repository files. The `--help` and `-h` aliases are also
 accepted immediately after each command.
@@ -228,8 +342,9 @@ accepted immediately after each command.
 `--changed <base>` is an opt-in focused-review mode. It obtains local paths
 from `git diff <base>...HEAD`, including deletions, and cannot be combined with
 explicit document paths. It checks changed Markdown documents and also selects
-documents affected by a changed configuration, package manifest, schema, Action
-definition, paired document, or local-link target. This is the only current
+documents affected by a changed configuration, package manifest,
+version-reference manifest, schema, Action definition, paired document,
+local-link target, referenced path, or file below a documented tree root. This is the only current
 mode that invokes a trusted Git command; it never executes commands extracted
 from documentation.
 
@@ -267,6 +382,9 @@ JSON interfaces.
 | Structured examples | `DOC_EXAMPLE_PARSE`, `DOC_SCHEMA_UNAVAILABLE`, `DOC_SCHEMA_INVALID` |
 | Action examples | `DOC_ACTION_UNAVAILABLE`, `DOC_ACTION_INPUT_UNKNOWN` |
 | Document pairs | `DOC_PAIR_DOCUMENT_MISSING`, `DOC_PAIR_HEADINGS_MISMATCH`, `DOC_PAIR_COMMAND_MISMATCH`, `DOC_PAIR_CODE_BLOCK_MISMATCH` |
+| Version references | `DOC_VERSION_STALE`, `DOC_VERSION_REFERENCE_MISSING`, `DOC_VERSION_EVIDENCE_UNAVAILABLE` |
+| Path references | `DOC_PATH_MISSING` |
+| Directory trees | `DOC_TREE_PATH_MISSING`, `DOC_TREE_PATH_UNDOCUMENTED`, `DOC_TREE_UNPARSED` |
 
 ## Acceptance criteria for the first usable release
 

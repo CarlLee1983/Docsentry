@@ -3,6 +3,9 @@ import { minimatch } from "minimatch";
 import { InvocationError } from "./errors.js";
 import type { RepositoryReader } from "../repository/reader.js";
 
+/** The version placeholder accepted inside a version reference pattern. */
+export const VERSION_PLACEHOLDER = "{version}";
+
 export type PackageAssertion = {
   document: string;
   label: string;
@@ -29,12 +32,37 @@ export type DocumentPairConfig = {
   requireSame: readonly ("headings" | "commands" | "codeBlocks")[];
 };
 
+export type VersionReferenceConfig = {
+  documents: readonly string[];
+  pattern: string;
+  manifest?: string;
+  evidence?: string;
+  label?: string;
+  required?: boolean;
+};
+
+export type PathReferenceConfig = {
+  documents: readonly string[];
+  include: readonly string[];
+};
+
+export type DirectoryTreeConfig = {
+  documents: readonly string[];
+  fenceLabel: string;
+  root?: string;
+  mode?: "declared-exists" | "exact";
+  ignore?: readonly string[];
+};
+
 export type DocsentryConfig = {
   documents?: readonly string[];
   package?: { manifest?: string; assertions?: readonly PackageAssertion[] };
   schemaExamples?: readonly SchemaExampleConfig[];
   actionExamples?: readonly ActionExampleConfig[];
   documentPairs?: readonly DocumentPairConfig[];
+  versionReferences?: readonly VersionReferenceConfig[];
+  pathReferences?: readonly PathReferenceConfig[];
+  directoryTrees?: readonly DirectoryTreeConfig[];
 };
 
 export async function loadConfig(
@@ -63,7 +91,21 @@ export function matchesPatterns(filePath: string, patterns: readonly string[]): 
 
 function validateConfig(input: unknown, source: string): DocsentryConfig {
   const value = object(input, source);
-  allowOnly(value, ["$schema", "documents", "package", "schemaExamples", "actionExamples", "documentPairs"], source);
+  allowOnly(
+    value,
+    [
+      "$schema",
+      "documents",
+      "package",
+      "schemaExamples",
+      "actionExamples",
+      "documentPairs",
+      "versionReferences",
+      "pathReferences",
+      "directoryTrees",
+    ],
+    source,
+  );
   optionalString(value.$schema, "$schema", source);
   const documents = optionalStrings(value.documents, "documents", source);
   const packageConfig = value.package === undefined ? undefined : validatePackage(value.package, source);
@@ -76,7 +118,25 @@ function validateConfig(input: unknown, source: string): DocsentryConfig {
   const documentPairs = optionalArray(value.documentPairs, "documentPairs", source)?.map((entry, index) =>
     validateDocumentPair(entry, `${source}: documentPairs[${index}]`),
   );
-  return { documents, package: packageConfig, schemaExamples, actionExamples, documentPairs };
+  const versionReferences = optionalArray(value.versionReferences, "versionReferences", source)?.map((entry, index) =>
+    validateVersionReference(entry, `${source}: versionReferences[${index}]`),
+  );
+  const pathReferences = optionalArray(value.pathReferences, "pathReferences", source)?.map((entry, index) =>
+    validatePathReference(entry, `${source}: pathReferences[${index}]`),
+  );
+  const directoryTrees = optionalArray(value.directoryTrees, "directoryTrees", source)?.map((entry, index) =>
+    validateDirectoryTree(entry, `${source}: directoryTrees[${index}]`),
+  );
+  return {
+    documents,
+    package: packageConfig,
+    schemaExamples,
+    actionExamples,
+    documentPairs,
+    versionReferences,
+    pathReferences,
+    directoryTrees,
+  };
 }
 
 function validatePackage(input: unknown, source: string): DocsentryConfig["package"] {
@@ -142,6 +202,62 @@ function validateDocumentPair(input: unknown, source: string): DocumentPairConfi
   };
 }
 
+function validateVersionReference(input: unknown, source: string): VersionReferenceConfig {
+  const value = object(input, source);
+  allowOnly(value, ["documents", "pattern", "manifest", "evidence", "label", "required"], source);
+  const pattern = requiredString(value.pattern, "pattern", source);
+  if (!pattern.includes(VERSION_PLACEHOLDER)) {
+    throw new InvocationError(`${source}: pattern must contain ${VERSION_PLACEHOLDER}`);
+  }
+  const evidence = optionalString(value.evidence, "evidence", source);
+  if (evidence !== undefined && !evidence.startsWith("/")) {
+    throw new InvocationError(`${source}: evidence must be a JSON pointer beginning with "/"`);
+  }
+  return {
+    documents: requiredStrings(value.documents, "documents", source),
+    pattern,
+    manifest: optionalString(value.manifest, "manifest", source),
+    evidence,
+    label: optionalString(value.label, "label", source),
+    required: optionalBoolean(value.required, "required", source),
+  };
+}
+
+function validatePathReference(input: unknown, source: string): PathReferenceConfig {
+  const value = object(input, source);
+  allowOnly(value, ["documents", "include"], source);
+  return {
+    documents: requiredStrings(value.documents, "documents", source),
+    include: requiredStrings(value.include, "include", source),
+  };
+}
+
+function validateDirectoryTree(input: unknown, source: string): DirectoryTreeConfig {
+  const value = object(input, source);
+  allowOnly(value, ["documents", "fenceLabel", "root", "mode", "ignore"], source);
+  const fenceLabel = requiredString(value.fenceLabel, "fenceLabel", source);
+  if (/\s/.test(fenceLabel)) throw new InvocationError(`${source}: fenceLabel must be one whitespace-free label`);
+  const mode = optionalString(value.mode, "mode", source);
+  if (mode !== undefined && mode !== "declared-exists" && mode !== "exact") {
+    throw new InvocationError(`${source}: mode supports declared-exists and exact`);
+  }
+  const root = optionalString(value.root, "root", source);
+  if (root !== undefined) normalizeRootOrThrow(root, source);
+  return {
+    documents: requiredStrings(value.documents, "documents", source),
+    fenceLabel,
+    root,
+    mode,
+    ignore: optionalStrings(value.ignore, "ignore", source),
+  };
+}
+
+function normalizeRootOrThrow(root: string, source: string): void {
+  if (root.startsWith("/") || root.endsWith("/") || root.includes("..")) {
+    throw new InvocationError(`${source}: root must be a repository-relative directory without a trailing slash`);
+  }
+}
+
 function object(input: unknown, source: string): Record<string, unknown> {
   if (typeof input !== "object" || input === null || Array.isArray(input)) {
     throw new InvocationError(`${source}: expected an object`);
@@ -157,6 +273,12 @@ function allowOnly(value: Record<string, unknown>, allowed: readonly string[], s
 function optionalArray(input: unknown, field: string, source: string): unknown[] | undefined {
   if (input === undefined) return undefined;
   if (!Array.isArray(input)) throw new InvocationError(`${source}: ${field} must be an array`);
+  return input;
+}
+
+function optionalBoolean(input: unknown, field: string, source: string): boolean | undefined {
+  if (input === undefined) return undefined;
+  if (typeof input !== "boolean") throw new InvocationError(`${source}: ${field} must be a boolean`);
   return input;
 }
 

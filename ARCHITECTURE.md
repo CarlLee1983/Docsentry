@@ -1,6 +1,7 @@
 # Docsentry architecture
 
-**Status:** v0.5.0 released; milestone 4 implementation is complete
+**Status:** v0.5.0 released; the milestone 5 version reference, path reference,
+and directory tree contracts are implemented and unreleased
 
 ## Design decision
 
@@ -45,6 +46,9 @@ AST details or evidence-loading order.
   local contract dependencies without exposing Git to rules.
 - The Node repository adapter resolves filesystem paths before reading them and
   rejects a symbolic link that points outside the checkout.
+- Documented path existence is evaluated against the repository file listing
+  rather than the filesystem, so both adapters agree on whether a directory
+  reference resolves and ignored build output is never treated as evidence.
 - Invalid Docsentry configuration is an invocation error, not a Finding.
 - The packaged JSON Schema and runtime validator accept the same configuration
   properties; unknown properties are invocation errors.
@@ -73,9 +77,9 @@ package.
 | --- | --- | --- |
 | Verification engine | Turn one request into one report | Orchestration, rule selection, normalization, ordering |
 | Repository reader | Read files and list paths beneath one root | Node filesystem access; an in-memory adapter for tests |
-| Document parser | Produce headings, links, commands, and fenced blocks with locations | Markdown AST parsing and source-position recovery |
+| Document parser | Produce headings, links, commands, fenced blocks, code spans, and directory trees with locations | Markdown AST parsing, ASCII tree parsing, and source-position recovery |
 | Evidence collector | Produce package, schema, and Action facts | Parse `package.json`, JSON Schema, Action metadata, and source-located workflow YAML mappings |
-| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, and pair comparisons |
+| Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, pair, version-reference, path-reference, and directory-tree comparisons |
 | Reporter | Render an already-complete report | Terminal, JSON, and SARIF 2.1.0 formatting |
 
 The Repository reader has a real seam because production code needs a Node
@@ -83,33 +87,50 @@ filesystem adapter while unit tests need an in-memory fixture adapter. The
 Document parser initially has one implementation; it should not acquire a
 public parser-adapter seam until a second document format is actually supported.
 
-## Proposed source layout
+## Source layout
 
-```text
+Docsentry verifies this tree against its own checkout in `exact` mode, so a
+moved, added, or removed source file fails the documentation check.
+
+```text source-layout
 src/
   core/
-    verify.ts          # VerificationEngine implementation
+    verify.ts           # VerificationEngine implementation
     finding.ts          # report model and deterministic ordering
     config.ts           # config parsing and validation
+    errors.ts           # invocation and repository path errors
     rules/              # sealed registry; pure rule logic where possible
+      link.ts
+      package.ts
+      structured.ts
+      action.ts
+      pair.ts
+      version.ts
+      path.ts
+      tree.ts
   repository/
     reader.ts           # Repository reader Interface
     node-reader.ts      # production Adapter
     memory-reader.ts    # test Adapter
+    path.ts             # repository-relative path normalization
   documents/
     markdown.ts         # source-located Markdown facts
+    commands.ts         # shell command extraction
+    location.ts         # character offset to source location
+    tree.ts             # ASCII directory tree parsing
   evidence/
     package.ts
     structured.ts       # JSON Schema and YAML example evidence
     github-action.ts
   cli/
     index.ts
-    check.ts
     init.ts
     inspect.ts
+    changed-files.ts    # opt-in Git change detection
   reporters/
     terminal.ts
     json.ts
+    sarif.ts
 ```
 
 ## Test strategy

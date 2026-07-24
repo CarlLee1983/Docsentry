@@ -4,7 +4,10 @@ import { validateActionExamples } from "./rules/action.js";
 import { validateLinks } from "./rules/link.js";
 import { validateDocumentPairs } from "./rules/pair.js";
 import { validatePackageContracts } from "./rules/package.js";
+import { selectedPath, validatePathReferences } from "./rules/path.js";
+import { isUnderRoot, validateDirectoryTrees } from "./rules/tree.js";
 import { validateStructuredExamples } from "./rules/structured.js";
+import { validateVersionReferences } from "./rules/version.js";
 import { parseMarkdown, type DocumentFact } from "../documents/markdown.js";
 import { NodeRepositoryReader } from "../repository/node-reader.js";
 import { normalizeRepositoryPath, resolveRepositoryPath } from "../repository/path.js";
@@ -27,14 +30,15 @@ export class DocsentryVerificationEngine implements VerificationEngine {
 
   async verify(request: VerificationRequest): Promise<VerificationReport> {
     const config = await loadConfig(this.reader, request.configPath);
+    const files = await this.reader.listFiles();
     const documents = request.changedPaths
       ? this.selectChangedDocuments(
-        await this.loadSelectedDocuments(undefined, config),
+        await this.loadSelectedDocuments(undefined, config, files),
         config,
         request.changedPaths,
         request.configPath ?? ".docsentry.json",
       )
-      : await this.loadSelectedDocuments(request.documents, config);
+      : await this.loadSelectedDocuments(request.documents, config, files);
     const cache = new Map(documents.map((document) => [document.path, document]));
     const loadDocument = async (filePath: string): Promise<DocumentFact> => {
       const normalized = normalizeRepositoryPath(filePath);
@@ -47,27 +51,32 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     };
 
     const scopedConfig = request.changedPaths ? configForDocuments(config, documents) : config;
-    const [linkFindings, packageFindings, structuredFindings, actionFindings, pairFindings] = await Promise.all([
-      validateLinks(documents, this.reader, loadDocument),
-      validatePackageContracts(documents, scopedConfig, this.reader, loadDocument),
-      validateStructuredExamples(documents, scopedConfig, this.reader),
-      validateActionExamples(documents, scopedConfig, this.reader),
-      validateDocumentPairs(scopedConfig, loadDocument),
-    ]);
+    const [linkFindings, packageFindings, structuredFindings, actionFindings, pairFindings, versionFindings] =
+      await Promise.all([
+        validateLinks(documents, this.reader, loadDocument),
+        validatePackageContracts(documents, scopedConfig, this.reader, loadDocument),
+        validateStructuredExamples(documents, scopedConfig, this.reader),
+        validateActionExamples(documents, scopedConfig, this.reader),
+        validateDocumentPairs(scopedConfig, loadDocument),
+        validateVersionReferences(documents, scopedConfig, this.reader),
+      ]);
     return createReport([
       ...linkFindings,
       ...packageFindings,
       ...structuredFindings,
       ...actionFindings,
       ...pairFindings,
+      ...versionFindings,
+      ...validatePathReferences(documents, scopedConfig, files),
+      ...validateDirectoryTrees(documents, scopedConfig, files),
     ]);
   }
 
   private async loadSelectedDocuments(
     requestedDocuments: readonly string[] | undefined,
     config: DocsentryConfig,
+    files: readonly string[],
   ): Promise<DocumentFact[]> {
-    const files = await this.reader.listFiles();
     const markdownFiles = files.filter(isMarkdown);
     const selected = new Set<string>();
     const selection = requestedDocuments ?? config.documents;
@@ -84,6 +93,15 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     for (const pair of config.documentPairs ?? []) {
       addIfExistingMarkdown(selected, markdownFiles, pair.canonical);
       addIfExistingMarkdown(selected, markdownFiles, pair.mirror);
+    }
+    for (const reference of config.versionReferences ?? []) {
+      addMatches(selected, markdownFiles, reference.documents);
+    }
+    for (const reference of config.pathReferences ?? []) {
+      addMatches(selected, markdownFiles, reference.documents);
+    }
+    for (const tree of config.directoryTrees ?? []) {
+      addMatches(selected, markdownFiles, tree.documents);
     }
     for (const assertion of config.package?.assertions ?? []) {
       addIfExistingMarkdown(selected, markdownFiles, assertion.document);
@@ -124,6 +142,16 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     for (const actionExample of config.actionExamples ?? []) {
       if (changed.has(normalizeRepositoryPath(actionExample.action))) selectMatching(actionExample.documents);
     }
+    for (const reference of config.versionReferences ?? []) {
+      if (changed.has(normalizeRepositoryPath(reference.manifest ?? "package.json"))) {
+        selectMatching(reference.documents);
+      }
+    }
+    for (const tree of config.directoryTrees ?? []) {
+      if ([...changed].some((changedPath) => isUnderRoot(changedPath, tree.root))) {
+        selectMatching(tree.documents);
+      }
+    }
     for (const pair of config.documentPairs ?? []) {
       const canonical = normalizeRepositoryPath(pair.canonical);
       const mirror = normalizeRepositoryPath(pair.mirror);
@@ -134,7 +162,10 @@ export class DocsentryVerificationEngine implements VerificationEngine {
     }
 
     for (const document of candidates) {
-      if (document.links.some((link) => linkTargetsChangedPath(document.path, link.url, changed))) {
+      if (
+        document.links.some((link) => linkTargetsChangedPath(document.path, link.url, changed)) ||
+        referencesChangedPath(document, config, changed)
+      ) {
         selected.add(document.path);
       }
     }
@@ -183,7 +214,31 @@ function configForDocuments(config: DocsentryConfig, documents: readonly Documen
     documentPairs: config.documentPairs?.filter((pair) =>
       selected.has(normalizeRepositoryPath(pair.canonical)) || selected.has(normalizeRepositoryPath(pair.mirror)),
     ),
+    versionReferences: config.versionReferences?.filter((reference) =>
+      documents.some((document) => matchesPatterns(document.path, reference.documents)),
+    ),
+    pathReferences: config.pathReferences?.filter((reference) =>
+      documents.some((document) => matchesPatterns(document.path, reference.documents)),
+    ),
+    directoryTrees: config.directoryTrees?.filter((tree) =>
+      documents.some((document) => matchesPatterns(document.path, tree.documents)),
+    ),
   };
+}
+
+function referencesChangedPath(
+  document: DocumentFact,
+  config: DocsentryConfig,
+  changedPaths: ReadonlySet<string>,
+): boolean {
+  return (config.pathReferences ?? []).some(
+    (reference) =>
+      matchesPatterns(document.path, reference.documents) &&
+      document.codeSpans.some((span) => {
+        const candidate = selectedPath(span.value, reference);
+        return candidate !== undefined && changedPaths.has(candidate);
+      }),
+  );
 }
 
 function linkTargetsChangedPath(documentPath: string, url: string, changedPaths: ReadonlySet<string>): boolean {

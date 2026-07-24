@@ -25,12 +25,18 @@ export type CodeBlock = {
   location: SourceLocation;
 };
 
+export type CodeSpan = {
+  value: string;
+  location: SourceLocation;
+};
+
 export type DocumentFact = {
   path: string;
   contents: string;
   headings: readonly Heading[];
   links: readonly DocumentLink[];
   codeBlocks: readonly CodeBlock[];
+  codeSpans: readonly CodeSpan[];
 };
 
 type MdastNode = {
@@ -51,6 +57,7 @@ export function parseMarkdown(filePath: string, contents: string): DocumentFact 
   const headings: Heading[] = [];
   const links: DocumentLink[] = [];
   const codeBlocks: CodeBlock[] = [];
+  const codeSpans: CodeSpan[] = [];
   const priorHeadings: Array<string | undefined> = [];
   const anchorCounts = new Map<string, number>();
 
@@ -87,9 +94,13 @@ export function parseMarkdown(filePath: string, contents: string): DocumentFact 
         location,
       });
     }
+
+    if (node.type === "inlineCode") {
+      codeSpans.push({ value: node.value ?? "", location });
+    }
   });
 
-  return { path: filePath, contents, headings, links, codeBlocks };
+  return { path: filePath, contents, headings, links, codeBlocks, codeSpans };
 }
 
 export function githubAnchor(value: string): string {

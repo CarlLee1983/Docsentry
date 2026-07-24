@@ -99,6 +99,75 @@ For Action examples that include more than one `uses:` step, set
 only that Action's `with:` keys, reporting an unknown key at its exact YAML
 line.
 
+To keep a documented release version from outliving its manifest, declare a
+version reference. Docsentry matches the literal pattern in each selected
+document and compares every `{version}` placeholder against a JSON pointer in a
+local manifest:
+
+```json
+{
+  "versionReferences": [
+    {
+      "documents": ["README.md"],
+      "pattern": "CarlLee1983/Docsentry@v{version}",
+      "label": "documented Action reference",
+      "required": true
+    }
+  ]
+}
+```
+
+`manifest` defaults to `package.json` and `evidence` defaults to `/version`.
+A documented version that no longer matches its evidence reports
+`DOC_VERSION_STALE` at the version literal itself, so the surrounding literal
+text keeps unrelated versions — a changelog history, for example — outside the
+contract. Set `required` to report a document that never states the reference
+at all.
+
+To keep documented file paths honest through a refactor, declare which inline
+code spans are paths:
+
+```json
+{
+  "pathReferences": [
+    {
+      "documents": ["ARCHITECTURE.md", "SPEC.md"],
+      "include": ["src/**", "test/**"]
+    }
+  ]
+}
+```
+
+Only inline code matching `include` is checked, and each candidate resolves
+against the repository root rather than against the document. Text containing
+whitespace, glob metacharacters, or a bare file extension stays prose, so
+`npm run build`, `docs/**/*.md`, and `.md` are never treated as paths. A
+missing target reports `DOC_PATH_MISSING` at the code span.
+
+An architecture document that draws its source layout can have that tree
+compared with the repository:
+
+```json
+{
+  "directoryTrees": [
+    {
+      "documents": ["ARCHITECTURE.md"],
+      "fenceLabel": "source-layout",
+      "root": "src",
+      "mode": "exact"
+    }
+  ]
+}
+```
+
+The parser accepts indented and box-drawing trees and strips trailing `#`
+comments. `declared-exists`, the default, reports `DOC_TREE_PATH_MISSING` for a
+documented path that no longer exists. `exact` also reports
+`DOC_TREE_PATH_UNDOCUMENTED` for a repository file the tree omits; a directory
+listed without children covers everything beneath it, and `ignore` excludes
+generated files. A line the parser cannot place reports `DOC_TREE_UNPARSED` as
+a warning instead of being dropped.
+
 ## GitHub Actions
 
 The composite Action runs the Docsentry code bundled with the Action revision,

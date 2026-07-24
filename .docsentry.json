@@ -5,7 +5,9 @@
     "SPEC.md",
     "ARCHITECTURE.md",
     "ROADMAP.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "AGENTS.md",
+    "docs/**/*.md"
   ],
   "package": {
     "manifest": "package.json",
@@ -34,6 +36,48 @@
       ],
       "action": "action.yml",
       "uses": "CarlLee1983/Docsentry"
+    }
+  ],
+  "pathReferences": [
+    {
+      "documents": [
+        "README.md",
+        "SPEC.md",
+        "ARCHITECTURE.md",
+        "ROADMAP.md",
+        "AGENTS.md",
+        "docs/**/*.md"
+      ],
+      "include": [
+        "src/**",
+        "test/**",
+        "docs/**",
+        "examples/**",
+        ".github/**",
+        "*.json",
+        "*.yml",
+        "*.md"
+      ]
+    }
+  ],
+  "versionReferences": [
+    {
+      "documents": [
+        "README.md"
+      ],
+      "pattern": "CarlLee1983/Docsentry@v{version}",
+      "label": "documented Action reference",
+      "required": true
+    }
+  ],
+  "directoryTrees": [
+    {
+      "documents": [
+        "ARCHITECTURE.md"
+      ],
+      "fenceLabel": "source-layout",
+      "root": "src",
+      "mode": "exact"
     }
   ]
 }
