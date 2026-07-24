@@ -131,6 +131,13 @@ v0.8.0 delivery:
   compared with one enum inside a schema rather than with every literal in a
   file. Adopting the contract in the sibling Tagsmith repository required it.
 
+v0.9.0 delivery:
+
+- `check --format github` places each finding as an inline pull request
+  annotation, so a reviewer sees a documentation failure next to the line that
+  caused it rather than in a job log. It writes workflow commands rather than
+  calling the Checks API, keeping verification offline and token-free.
+
 Exit condition: an existing repository can enable Docsentry in CI in one
 commit, failing only on documentation that changes afterwards.
 
