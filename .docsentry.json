@@ -28,6 +28,14 @@
       ],
       "language": "json",
       "schema": "schema.json"
+    },
+    {
+      "documents": [
+        "docs/operations-guide.zh-TW.md"
+      ],
+      "language": "json",
+      "schema": "schema.json",
+      "fenceLabel": "docsentry-config"
     }
   ],
   "actionExamples": [
@@ -68,10 +76,19 @@
   "versionReferences": [
     {
       "documents": [
-        "README.md"
+        "README.md",
+        "docs/operations-guide.zh-TW.md"
       ],
       "pattern": "CarlLee1983/Docsentry@v{version}",
       "label": "documented Action reference",
+      "required": true
+    },
+    {
+      "documents": [
+        "docs/operations-guide.zh-TW.md"
+      ],
+      "pattern": "本指南以 v{version} 為準",
+      "label": "guide edition",
       "required": true
     }
   ],
