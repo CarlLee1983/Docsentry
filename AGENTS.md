@@ -88,5 +88,5 @@ name. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Single-context: one `<CONTEXT.md>` plus `<docs/adr/>` at the repo root, both created
+Single-context: one `CONTEXT.md` plus `docs/adr/` at the repo root, both created
 lazily. See `docs/agents/domain.md`.
