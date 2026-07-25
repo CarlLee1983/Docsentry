@@ -73,9 +73,9 @@ VerificationEngine.verify
   └─ normalize and return the VerificationReport
 ```
 
-The rule registry is internal in version 0.1. A plugin Interface would be a
-shallow seam before there are real independent rule implementations outside the
-package.
+The rule registry is internal in version 0.1 and Docsentry publishes no
+rule-plugin Interface — see
+[ADR-0001](docs/adr/0001-rule-registry-stays-internal.md).
 
 Drafting runs beside verification rather than inside it. A detector proposes a
 contract; the engine then verifies that contract to price it. Keeping the two
@@ -96,8 +96,8 @@ never learns that a configuration was proposed rather than committed.
 
 The Repository reader has a real seam because production code needs a Node
 filesystem adapter while unit tests need an in-memory fixture adapter. The
-Document parser initially has one implementation; it should not acquire a
-public parser-adapter seam until a second document format is actually supported.
+Document parser has one implementation and no public parser-adapter seam — see
+[ADR-0004](docs/adr/0004-no-parser-seam-until-a-second-format-exists.md).
 
 ## Source layout
 
@@ -178,5 +178,5 @@ src/
 - JSON Schema validation uses Ajv; YAML parsing uses `yaml` with safe,
   non-executing parsing.
 - GitHub PR annotations are delivered as a reporter that writes workflow
-  commands, rather than as a Checks API integration, so the check needs no
-  token and performs no network I/O.
+  commands, rather than as a Checks API integration — see
+  [ADR-0005](docs/adr/0005-annotations-as-a-reporter-not-a-checks-integration.md).
