@@ -70,15 +70,24 @@ about the evidence it can evaluate.
 
 ## Ubiquitous language
 
+This table is verified against [`CONTEXT.md`](CONTEXT.md), which is the
+authoritative glossary: a term added there and missing here is a finding, and so
+is a term listed here that the glossary does not define.
+
 | Term | Meaning |
 | --- | --- |
-| **Document** | One selected Markdown file, parsed with source locations. |
-| **Evidence** | A repository fact read from a local artifact, such as a script in `package.json` or an Action input in `action.yml`. |
-| **Contract** | A declared relationship that Docsentry can verify between a Document and Evidence. |
-| **Rule** | Deterministic logic that evaluates one kind of Contract. Rules own stable identifiers such as `DOC_SCRIPT_UNKNOWN`. |
-| **Finding** | A rule result that requires maintainer attention. It includes severity, document location, evidence location when available, and remediation text. |
-| **Canonical document** | The reference document in a language pair. It determines required structure; it is not assumed to be a better translation. |
-| **Mirror document** | The paired document expected to retain selected contracts from its canonical document. |
+| `Document` | One selected Markdown file, parsed with source locations. |
+| `Drift` | The condition where a Document's machine-verifiable claims are no longer supported by the checkout it describes. |
+| `Evidence` | A repository fact read from a local artifact, such as a script in `package.json` or an Action input in `action.yml`. |
+| `Checkout` | The repository state on disk that a verification run is evaluated against. Nothing outside it is Evidence. |
+| `Contract` | A declared relationship that Docsentry can verify between a Document and Evidence. |
+| `Rule` | Deterministic logic that evaluates one kind of Contract. Rules own stable identifiers such as `DOC_SCRIPT_UNKNOWN`. |
+| `Finding` | A rule result that requires maintainer attention. It includes severity, document location, evidence location when available, and remediation text. |
+| `Invocation error` | A failure to run at all, such as malformed configuration or a missing baseline file. Distinct from a Finding, which describes a checkout that was verified successfully. |
+| `Canonical document` | The reference document in a language pair. It determines required structure; it is not assumed to be a better translation. |
+| `Mirror document` | The paired document expected to retain selected contracts from its canonical document. |
+| `Baseline` | A recorded count of Findings per Document and Rule, used to adopt Docsentry on a repository that has already drifted without weakening any Contract. |
+| `Proposal` | A Contract drafted from a checkout for a maintainer to review, carrying the Findings it would produce if adopted. Never applied automatically. |
 
 ## Initial contracts
 

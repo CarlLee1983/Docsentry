@@ -90,6 +90,22 @@
       "documents": [
         "SPEC.md"
       ],
+      "label": "domain term",
+      "values": {
+        "sources": [
+          "CONTEXT.md"
+        ],
+        "pattern": "\\*\\*([A-Z][a-z]+(?: [a-z]+)?)\\*\\*:"
+      },
+      "documented": {
+        "pattern": "[A-Z][a-z]+(?: [a-z]+)?",
+        "section": "Ubiquitous language"
+      }
+    },
+    {
+      "documents": [
+        "SPEC.md"
+      ],
       "label": "rule identifier",
       "values": {
         "sources": [
