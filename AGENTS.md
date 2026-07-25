@@ -56,9 +56,13 @@ verification must report all discoverable findings rather than fail fast.
 
 ## Commit & Pull Request Guidelines
 
-This checkout has no Git metadata, so no existing commit convention can be
-derived. Use concise, imperative subjects such as `Add local link validation`.
-Keep commits narrowly scoped. Pull requests should explain the affected
+Follow the convention already in the history: `<type>: [ <scope> ] <subject>`,
+with an imperative subject — for example `feat: [core] Add enumeration contract`
+or `fix: [cli] Exclude angle-bracket placeholders`. Types are feat, fix, docs,
+style, refactor, perf, test, chore, and ci; scope is the touched directory under
+`src/` (`core`, `cli`, …) and may be omitted for repo-wide changes such as
+`docs:` or `chore:`. Releases use `chore: Release <version>`. Keep commits
+narrowly scoped. Pull requests should explain the affected
 contract or rule, list verification performed, link related issues when
 available, and include example terminal or JSON output for user-visible report
 changes. Update `SPEC.md` and `ARCHITECTURE.md` whenever behavior or module
@@ -69,3 +73,20 @@ boundaries change.
 Use the committed `.tagsmith.json` and the local `tagsmith` binary to manage
 release tags. Run `npm run tag:next` before a release and create annotated tags
 with `npx tagsmith create`; do not create version tags directly with `git tag`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in this repo's GitHub Issues, driven through the `gh` CLI. See
+`docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles map one-to-one onto label strings of the same
+name. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` plus `docs/adr/` at the repo root, both created
+lazily. See `docs/agents/domain.md`.
