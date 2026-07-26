@@ -81,6 +81,7 @@
       .ci-copy p { color: var(--muted); font-size: 1.06rem; }
       .code { overflow: hidden; border-radius: 12px; background: var(--code); color: #eaf0ff; }
       .code pre { padding: 26px; }
+      .code .note { margin: 0; padding: 0 26px 22px; color: #9caac7; font-size: 0.85rem; line-height: 1.6; }
       .yaml-key { color: #9db8ff; }
       .yaml-value { color: #8ee5b4; }
 
@@ -179,10 +180,11 @@
           <div class="code" aria-label="GitHub Actions 設定範例">
             <pre><span class="yaml-key">steps</span>:
   - <span class="yaml-key">uses</span>: <span class="yaml-value">actions/checkout@v4</span>
-  - <span class="yaml-key">uses</span>: <span class="yaml-value">CarlLee1983/Docsentry@v0.5.0</span>
+  - <span class="yaml-key">uses</span>: <span class="yaml-value">CarlLee1983/Docsentry@&lt;version&gt;</span>
     <span class="yaml-key">with</span>:
       <span class="yaml-key">config</span>: <span class="yaml-value">.docsentry.json</span>
       <span class="yaml-key">format</span>: <span class="yaml-value">sarif</span></pre>
+            <p class="note">&lt;version&gt; 是佔位符，不是待填的疏漏。實際的發行版本以 README 為準，那裡的版本引用由 Docsentry 自己驗證。</p>
           </div>
         </div>
       </section>
@@ -196,6 +198,6 @@
       </section>
     </main>
 
-    <footer class="shell">Docsentry v0.5.0 · Deterministic, local-first documentation verification.</footer>
+    <footer class="shell">Docsentry · Deterministic, local-first documentation verification.</footer>
   </body>
 </html>
