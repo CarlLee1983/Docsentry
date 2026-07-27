@@ -76,9 +76,9 @@ is a term listed here that the glossary does not define.
 
 | Term | Meaning |
 | --- | --- |
-| `Document` | One selected Markdown file, parsed with source locations. |
+| `Document` | One Markdown file discovered inside the Checkout and parsed with source locations. Discovery skips whatever the checkout declares as ignored. |
 | `Drift` | The condition where a Document's machine-verifiable claims are no longer supported by the checkout it describes. |
-| `Evidence` | A repository fact read from a local artifact, such as a script in `package.json` or an Action input in `action.yml`. |
+| `Evidence` | A repository fact read from a local artifact, such as a script in `package.json` or an Action input in `action.yml`. Evidence is named by a contract rather than discovered, so it may reach an artifact discovery skips. |
 | `Checkout` | The repository state on disk that a verification run is evaluated against. Nothing outside it is Evidence. |
 | `Contract` | A declared relationship that Docsentry can verify between a Document and Evidence. |
 | `Rule` | Deterministic logic that evaluates one kind of Contract. Rules own stable identifiers such as `DOC_SCRIPT_UNKNOWN`. |
@@ -288,6 +288,15 @@ the contract is a list comparison, not source-code analysis.
 The configuration filename is `.docsentry.json`. Configuration is
 optional for basic document discovery and link parsing, but required for
 schema, Action, package-identity, and document-pair contracts.
+
+Document selection runs inside the checkout boundary. Discovery skips `.git`
+and every path excluded by the checkout's `.gitignore` files or its
+`.git/info/exclude`, honouring nested files, negation, and the precedence
+between them. An ignore file that resolves outside the root through a symlink
+is not read. Evidence is exempt, because a contract names its artifact
+explicitly — a schema below an ignored `out/` is still read. Docsentry parses
+those files rather than invoking Git, so verification stays inert; see
+[ADR 0008](docs/adr/0008-the-checkout-boundary-is-read-from-the-checkout.md).
 
 ```json
 {

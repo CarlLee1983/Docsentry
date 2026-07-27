@@ -87,7 +87,7 @@ never learns that a configuration was proposed rather than committed.
 | Module | Interface responsibility | Implementation responsibility |
 | --- | --- | --- |
 | Verification engine | Turn one request into one report | Orchestration, rule selection, normalization, ordering |
-| Repository reader | Read files and list paths beneath one root | Node filesystem access; an in-memory adapter for tests |
+| Repository reader | Read files and list paths beneath one root | Node filesystem access, with the checkout boundary read from the repository's ignore files and applied to listing only; an in-memory adapter for tests, whose fixture is its own boundary |
 | Document parser | Produce headings, links, commands, fenced blocks, code spans, and directory trees with locations | Markdown AST parsing, ASCII tree parsing, and source-position recovery |
 | Evidence collector | Produce package, schema, Action, and literal facts | Parse `package.json`, JSON Schema, Action metadata, source-located workflow YAML mappings, and pattern-matched literals from selected source files |
 | Rule evaluator | Convert document facts plus evidence into Findings | Link, script, schema, target-scoped Action, pair, version-reference, path-reference, directory-tree, and enumeration comparisons |

@@ -10,7 +10,9 @@ against, and what comes out.
 ### What is checked
 
 **Document**:
-One selected Markdown file, parsed with source locations.
+One Markdown file discovered inside the Checkout and parsed with source
+locations. Discovery skips whatever the Checkout declares as ignored, so a file
+a repository excludes from itself is never a Document.
 _Avoid_: page, article, file
 
 **Drift**:
@@ -22,7 +24,9 @@ _Avoid_: staleness, rot, desync
 
 **Evidence**:
 A repository fact read from a local artifact — a script in `package.json`, an
-input in `action.yml`, a value at a JSON pointer.
+input in `action.yml`, a value at a JSON pointer. Evidence is named by a
+Contract rather than discovered, so a Contract may reach an artifact that
+Document discovery skips.
 _Avoid_: source of truth, ground truth, data
 
 **Checkout**:

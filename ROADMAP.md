@@ -209,6 +209,84 @@ without consulting `SPEC.md`. Measured against the sibling Tagsmith checkout,
 the proposals reconstruct its hand-written contracts apart from the
 enumeration.
 
+## Milestone 8 — the checkout boundary — complete locally
+
+Milestone 7 removed the cost of declaring a contract and was measured against
+one repository. A second adopter shows what that sample hid.
+
+loop-apidoc adopted Docsentry on 2026-07-24, a day before `suggest` shipped. Its
+committed configuration is eleven lines holding a document selector and nothing
+else — precisely the outcome Milestone 7 opens by describing, now observed
+rather than predicted. Run against it, `suggest` proposed three contracts and
+two of them were unusable, because the walk had descended into `.venv/`,
+`.worktrees/`, and `.superpowers/`: a document pair pointed at a README inside a
+Git worktree, and a path-reference contract spanned 2085 code spans across 169
+documents at a cost of 975 findings. The repository reader skipped four
+hard-coded directory names, which were this project's own `.gitignore` frozen
+into source and shaped like a Node project.
+
+The obstacle is that Docsentry did not know which files belong to the checkout
+it was checking.
+
+Deliverables:
+
+- The checkout boundary is read from the ignore files a repository carries — its
+  `.gitignore` files and its `.git/info/exclude` — with nested files, negation,
+  and Git's precedence between them honoured. Docsentry parses those files
+  rather than invoking Git, so verification stays inert — see
+  [ADR 0008](docs/adr/0008-the-checkout-boundary-is-read-from-the-checkout.md).
+- Two boundaries stay structural, because no ignore file declares them: `.git`
+  itself, and an ignore file symlinked outside the root, which Git refuses to
+  follow and which would otherwise let a committed file apply rules from
+  anywhere on the machine.
+- The boundary scopes discovery only. A contract may still name an ignored
+  artifact as evidence, because an explicit declaration outranks the walk.
+  `CONTEXT.md` states that asymmetry in the definitions of Document and
+  Evidence.
+
+Not included: cross-ecosystem evidence. Three of the six proposal detectors read
+`package.json`, so a Python repository receives no package, version, or schema
+proposal at all. That is a real obstacle and a separate one; the measurement
+that would scope it is a `suggest` run against a checkout whose boundary is
+already correct, which is what this milestone produces.
+
+Delivery:
+
+- Against loop-apidoc, the path-reference proposal falls from 169 documents and
+  975 findings to 27 documents and 208, and the worktree document pair
+  disappears. No proposal names a path below `.venv/`, `.worktrees/`, or
+  `.superpowers/`.
+- `check` is unchanged for all three adopters — this repository, Tagsmith, and
+  loop-apidoc all still report no findings.
+- A differential harness in `test/repository/node-reader.test.ts` compares the
+  walk against `git ls-files --others --exclude-standard` over fifty-three
+  fixtures. Fifty-two agree; the exception is a vendored checkout, which Git
+  treats as opaque and this walk does not, recorded as an accepted cost rather
+  than approximated. The suite is a record of what has been checked, not a claim
+  that any dimension is cleared: every round of review so far has found a
+  failing case smaller than anything already in it.
+- Five rounds of review found what the first fixtures did not: a nested negation
+  re-included a directory but not its contents, rules symlinked outside the
+  checkout were honoured, three successive heuristics aimed at the first of
+  those each broke a pattern shape of their own, CRLF endings and byte-order
+  marks corrupted patterns, and a general glob matcher expanded brace and
+  extended-glob syntax that Git takes literally. The heuristics were abandoned
+  for Git's documented matching rules, which need no such bookkeeping. Every
+  case now has a test.
+- The gitignore library adopted for this milestone was removed again once the
+  matching rules were applied directly, so the boundary ships with no new
+  dependency.
+
+Accepted costs are recorded in
+[ADR 0008](docs/adr/0008-the-checkout-boundary-is-read-from-the-checkout.md); the
+one worth restating is that an ignore file is not Git's tracking state, so a
+file that is untracked and unignored is still discovered. Measured across this
+repository and Tagsmith, that set is currently empty.
+
+Exit condition: a repository that is not a Node project, and that keeps
+virtualenvs, worktrees, or vendored tooling on disk, receives proposals naming
+only files it actually maintains.
+
 ## Resolved decisions
 
 | Decision | Current default | Resolve before |
