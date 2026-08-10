@@ -4,7 +4,7 @@ Docsentry 會把 Markdown 文件中的可驗證承諾，與同一個工作目錄
 設定檔、JSON Schema 及 GitHub Action 定義逐一比對。它不會存取網路、不會執行
 文件內的命令，也不會自動改寫文件。
 
-本指南以 v0.10.0 為準，適用於維護 CLI、套件、GitHub Action 或雙語文件的
+本指南以 v0.10.1 為準，適用於維護 CLI、套件、GitHub Action 或雙語文件的
 repository。
 
 ## 1. 安裝需求
@@ -275,7 +275,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: CarlLee1983/Docsentry@v0.10.0
+      - uses: CarlLee1983/Docsentry@v0.10.1
         with:
           config: .docsentry.json
           format: github

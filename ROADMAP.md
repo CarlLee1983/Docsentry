@@ -209,7 +209,7 @@ without consulting `SPEC.md`. Measured against the sibling Tagsmith checkout,
 the proposals reconstruct its hand-written contracts apart from the
 enumeration.
 
-## Milestone 8 — the checkout boundary — complete locally
+## Milestone 8 — the checkout boundary — complete in v0.10.1
 
 Milestone 7 removed the cost of declaring a contract and was measured against
 one repository. A second adopter shows what that sample hid.

@@ -3,6 +3,26 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## v0.10.1 — 2026-07-27
+
+### Added
+
+- Repository discovery now reads the checkout's `.gitignore` files and
+  `.git/info/exclude`, including nested rules, negation, and Git-compatible
+  pattern precedence. Verification remains inert because Docsentry reads local
+  artifacts instead of invoking Git on the default check path.
+- A differential repository-reader suite compares discovery with Git across
+  representative ignore-rule fixtures and records the deliberately accepted
+  differences.
+- The domain glossary, architectural decision records, and agent guidance now
+  capture the vocabulary and constraints that govern future changes.
+
+### Changed
+
+- The Traditional Chinese operations guide is now verified against its stated
+  Docsentry version and configuration examples.
+- The offline promotional page no longer carries a release-version claim.
+
 ## v0.10.0 — 2026-07-25
 
 ### Added

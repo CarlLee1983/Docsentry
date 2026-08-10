@@ -1,8 +1,8 @@
 # Docsentry product specification
 
-**Status:** v0.10.0 released; milestone 7 implementation is complete
+**Status:** v0.10.1 released; milestone 8 implementation is complete
 
-**Last updated:** 2026-07-24
+**Last updated:** 2026-07-27
 
 ## Problem
 
