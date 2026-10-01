@@ -3,6 +3,23 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
+## v0.10.2 — 2026-10-01
+
+### Fixed
+
+- The `docsentry` bin installed from npm now runs when invoked through
+  `node_modules/.bin` or `npx`. The entry guard compared npm's symlink path
+  with the module's real path, so the command exited without output; the
+  GitHub Action, which runs `dist/cli/index.js` directly, was unaffected.
+
+### Security
+
+- v0.10.1 was tagged but never published to npm, so this is the first npm
+  release carrying its dependency fix: `brace-expansion` 5.0.12 and
+  `fast-uri` 3.1.8. Upgrading from v0.10.0 with an existing lockfile, run
+  `npm update brace-expansion fast-uri` and confirm with
+  `npm ls brace-expansion fast-uri`.
+
 ## v0.10.1 — 2026-10-01
 
 ### Security
