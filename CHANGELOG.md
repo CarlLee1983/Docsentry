@@ -3,7 +3,20 @@
 All notable Docsentry changes are recorded here. Release tags follow the
 `v{version}` pattern managed by Tagsmith.
 
-## v0.10.1 — 2026-07-27
+## v0.10.1 — 2026-10-01
+
+### Security
+
+- The lockfile now resolves `brace-expansion` 5.0.12 (through `minimatch`) and
+  `fast-uri` 3.1.8 (through `ajv`), clearing GHSA-rgw5-rvv9-x895,
+  GHSA-6j4f-fj2g-mc7p, GHSA-qhr7-859c-m2p7, GHSA-q2hr-2g5m-vwhr, and the
+  `fast-uri` advisories up to GHSA-hrr3-gc8f-f4qj. The GitHub Action installs
+  from this lockfile, so pinning `v0.10.1` is enough there.
+- npm consumers: a fresh install resolves the patched versions without
+  overrides, because the published ranges already admit them. An existing
+  lockfile keeps its old resolutions until refreshed — run
+  `npm update brace-expansion fast-uri`, then confirm with
+  `npm ls brace-expansion fast-uri`.
 
 ### Added
 
