@@ -153,6 +153,7 @@ src/
     inspect.ts
     baseline.ts         # baseline snapshot read and write
     changed-files.ts    # opt-in Git change detection
+    entry-point.ts      # bin entry detection through npm symlinks
   reporters/
     terminal.ts
     json.ts

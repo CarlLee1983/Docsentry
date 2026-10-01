@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 
-import { pathToFileURL } from "node:url";
-
 import { InvocationError } from "../core/errors.js";
 import type { VerificationReport } from "../core/finding.js";
 import { verifyRepository } from "../core/verify.js";
 import { applyBaseline, type StaleBaselineEntry } from "../core/baseline.js";
 import { resolveBaseline, writeBaseline } from "./baseline.js";
 import { changedFiles } from "./changed-files.js";
+import { isEntryPoint } from "./entry-point.js";
 import { inspectDocument } from "./inspect.js";
 import { initialize } from "./init.js";
 import { suggest } from "./suggest.js";
@@ -277,7 +276,7 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isEntryPoint(process.argv[1], import.meta.url)) {
   void main(process.argv.slice(2)).then((exitCode) => {
     process.exitCode = exitCode;
   });
